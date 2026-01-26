@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
@@ -66,7 +66,6 @@ export default function NewSyncPage() {
   };
 
   const canGoNext = (): boolean => {
-    // TODO: Add validation for each step
     switch (currentStep) {
       case 1:
         return !!(formData.airtableBaseId && formData.airtableTableId);
@@ -102,109 +101,176 @@ export default function NewSyncPage() {
   };
 
   return (
-    <div className="py-10 lg:mt-10">
-      <div className="mx-auto max-w-5xl px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-foreground text-4xl font-bold">Create New Sync</h1>
-          <p className="text-muted-foreground mt-2">
-            Set up a new sync configuration between Airtable and Google Sheets
-          </p>
-        </div>
+    <div className="relative min-h-screen pb-20 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+        {/* Gradient Orbs */}
+        <div
+          className="absolute top-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+          aria-hidden="true"
+        />
+      </div>
 
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center">
-                  {/* Step Circle */}
-                  <div
-                    className={cn(
-                      "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all",
-                      {
-                        "bg-primary border-primary text-primary-foreground": currentStep > step.id,
-                        "border-primary text-primary": currentStep === step.id,
-                        "border-muted text-muted-foreground": currentStep < step.id,
-                      }
-                    )}
-                  >
-                    {currentStep > step.id ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <span className="text-sm font-medium">{step.id}</span>
-                    )}
-                  </div>
-                  {/* Step Label */}
-                  <div className="mt-2 text-center">
+      <div className="py-10 lg:mt-10">
+        <div className="mx-auto max-w-5xl px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8 animate-fade-in">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="mb-4 hover:bg-cyan-500/5 transition-colors"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-4">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm font-mono text-cyan-400">Setup Wizard</span>
+            </div>
+
+            <h1 className="text-foreground text-4xl md:text-5xl font-bold mb-2">
+              Create New Sync
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Set up a new sync configuration between Airtable and Google Sheets
+            </p>
+          </div>
+
+          {/* Progress Indicator */}
+          <div className="mb-8 animate-fade-in-delayed">
+            <div className="relative">
+              {/* Progress Bar Background */}
+              <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted -z-10" />
+
+              {/* Active Progress Bar */}
+              <div
+                className="absolute top-5 left-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 -z-10 transition-all duration-500"
+                style={{
+                  width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`,
+                }}
+              />
+
+              <div className="flex items-center justify-between">
+                {STEPS.map((step, index) => (
+                  <div key={step.id} className="flex flex-col items-center">
+                    {/* Step Circle */}
                     <div
-                      className={cn("text-xs font-medium", {
-                        "text-foreground": currentStep >= step.id,
-                        "text-muted-foreground": currentStep < step.id,
-                      })}
+                      className={cn(
+                        "relative flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 bg-background z-10",
+                        {
+                          "border-cyan-500 shadow-lg shadow-cyan-500/20": currentStep >= step.id,
+                          "border-muted": currentStep < step.id,
+                        }
+                      )}
                     >
-                      {step.title}
+                      {currentStep > step.id ? (
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full" />
+                          <Check className="h-5 w-5 text-white relative z-10" />
+                        </>
+                      ) : (
+                        <span
+                          className={cn("text-sm font-bold font-mono", {
+                            "text-gradient-sync": currentStep === step.id,
+                            "text-muted-foreground": currentStep < step.id,
+                          })}
+                        >
+                          {step.id}
+                        </span>
+                      )}
+
+                      {/* Active Step Glow */}
+                      {currentStep === step.id && (
+                        <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-md animate-pulse" />
+                      )}
+                    </div>
+
+                    {/* Step Label */}
+                    <div className="mt-3 text-center max-w-[100px]">
+                      <div
+                        className={cn("text-xs font-medium transition-colors", {
+                          "text-foreground": currentStep >= step.id,
+                          "text-muted-foreground": currentStep < step.id,
+                        })}
+                      >
+                        {step.title}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* Connector Line */}
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={cn("flex-1 h-0.5 mx-2 transition-all", {
-                      "bg-primary": currentStep > step.id,
-                      "bg-muted": currentStep <= step.id,
-                    })}
-                  />
-                )}
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {/* Step Content */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{STEPS[currentStep - 1].title}</CardTitle>
-            <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
-          </CardHeader>
-          <CardContent>{renderStepContent()}</CardContent>
-        </Card>
+          {/* Step Content */}
+          <Card className="mb-6 border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden animate-fade-in-delayed-more">
+            {/* Card Glow Effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-50 pointer-events-none" />
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={goToPreviousStep}
-            disabled={currentStep === 1}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            Step {currentStep} of {STEPS.length}
-          </div>
-          {currentStep < STEPS.length && (
-            <Button onClick={goToNextStep} disabled={!canGoNext()}>
-              Next
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-1 h-8 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
+                <CardTitle className="text-2xl">{STEPS[currentStep - 1].title}</CardTitle>
+              </div>
+              <CardDescription className="text-base">
+                {STEPS[currentStep - 1].description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative">{renderStepContent()}</CardContent>
+          </Card>
+
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between animate-fade-in-delayed-more">
+            <Button
+              variant="outline"
+              onClick={goToPreviousStep}
+              disabled={currentStep === 1}
+              className="border-cyan-500/30 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all duration-300"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Previous
             </Button>
-          )}
+
+            <div className="px-4 py-2 rounded-full bg-muted/50 backdrop-blur-sm border border-border">
+              <span className="text-sm font-mono text-muted-foreground">
+                Step <span className="text-gradient-sync font-bold">{currentStep}</span> of {STEPS.length}
+              </span>
+            </div>
+
+            {currentStep < STEPS.length && (
+              <Button
+                onClick={goToNextStep}
+                disabled={!canGoNext()}
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              >
+                Next
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Step Components (Placeholders - to be implemented)
+// Step Components
 
 function AirtableSelectionStep({
   formData,
@@ -215,9 +281,11 @@ function AirtableSelectionStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Select your Airtable base and table to sync from.
-      </p>
+      <div className="px-4 py-3 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+        <p className="text-sm text-muted-foreground">
+          Select your Airtable base and table to sync from.
+        </p>
+      </div>
       <AirtableSelector
         value={{
           baseId: formData.airtableBaseId,
@@ -245,9 +313,11 @@ function GoogleSheetsSelectionStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Select your Google Spreadsheet and sheet to sync to.
-      </p>
+      <div className="px-4 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+        <p className="text-sm text-muted-foreground">
+          Select your Google Spreadsheet and sheet to sync to.
+        </p>
+      </div>
       <GoogleSheetsSelector
         value={{
           spreadsheetId: formData.googleSpreadsheetId,
@@ -275,9 +345,11 @@ function FieldMappingStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Map Airtable fields to Google Sheets columns. We'll automatically suggest mappings based on field names.
-      </p>
+      <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/5 to-emerald-500/5 border border-cyan-500/20">
+        <p className="text-sm text-muted-foreground">
+          Map Airtable fields to Google Sheets columns. We'll automatically suggest mappings based on field names.
+        </p>
+      </div>
       <FieldMapper
         value={{
           airtableBaseId: formData.airtableBaseId,
@@ -303,9 +375,11 @@ function SyncConfigurationStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Configure how your data will sync between Airtable and Google Sheets.
-      </p>
+      <div className="px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+        <p className="text-sm text-muted-foreground">
+          Configure how your data will sync between Airtable and Google Sheets.
+        </p>
+      </div>
       <SyncOptions
         value={{
           airtableBaseName: formData.airtableBaseName,
@@ -329,9 +403,11 @@ function SyncConfigurationStep({
 function ReviewStepWrapper({ formData }: { formData: SyncFormData }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Review your sync configuration before creating.
-      </p>
+      <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20">
+        <p className="text-sm text-muted-foreground">
+          Review your sync configuration before creating.
+        </p>
+      </div>
       <ReviewStep formData={formData} />
     </div>
   );

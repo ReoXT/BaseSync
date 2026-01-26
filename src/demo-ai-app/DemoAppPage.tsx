@@ -20,6 +20,9 @@ import {
   Clock,
   Activity,
   Unplug,
+  Plus,
+  Zap,
+  TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -62,74 +65,123 @@ export default function DemoAppPage() {
   };
 
   return (
-    <div className="py-10 lg:mt-10">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-foreground mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
-            BaseSync <span className="text-primary">Dashboard</span>
-          </h2>
-        </div>
-        <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-center text-lg leading-8">
-          Seamlessly sync data between Airtable and Google Sheets
-        </p>
+    <div className="relative min-h-screen pb-20 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+        {/* Gradient Orbs */}
+        <div
+          className="absolute top-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+          aria-hidden="true"
+        />
+      </div>
 
-        {/* Connection Status Cards */}
-        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <AirtableConnectionCard status={airtableStatus} isLoading={airtableLoading} />
-          <GoogleSheetsConnectionCard status={googleStatus} isLoading={googleLoading} />
-        </div>
-
-        {/* Quick Stats Section */}
-        <div className="mt-12">
-          <h3 className="text-foreground mb-6 text-2xl font-bold">
-            Quick Stats
-          </h3>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <StatCard
-              icon={<ArrowLeftRight className="size-6" />}
-              title="Active Syncs"
-              value={activeSyncsCount.toString()}
-              description="Sync configurations"
-              isLoading={isLoading}
-            />
-            <StatCard
-              icon={<Activity className="size-6" />}
-              title="Total Syncs"
-              value={totalSyncsCount.toString()}
-              description="Sync configurations"
-              isLoading={isLoading}
-            />
-            <StatCard
-              icon={<Clock className="size-6" />}
-              title="Last Sync"
-              value={formatLastSync(lastSyncTime)}
-              description="Most recent sync"
-              isLoading={isLoading}
-            />
+      <div className="py-10 lg:mt-10">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          {/* Header */}
+          <div className="mx-auto max-w-4xl text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-6 animate-fade-in">
+              <Zap className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm font-mono text-cyan-400">
+                Command Center
+              </span>
+            </div>
+            <h1 className="text-foreground text-4xl md:text-5xl font-bold tracking-tight mb-4 animate-slide-up">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground text-lg animate-fade-in-delayed">
+              Monitor and manage your data sync operations
+            </p>
           </div>
-        </div>
 
-        {/* Active Sync Configurations */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-foreground text-2xl font-bold">
-              Sync Configurations
-            </h3>
-            <Button disabled={!bothConnected || isLoading} onClick={() => navigate('/sync/new')}>
-              + New Sync
-            </Button>
+          {/* Connection Status Cards */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-12 animate-fade-in-delayed">
+            <AirtableConnectionCard status={airtableStatus} isLoading={airtableLoading} />
+            <GoogleSheetsConnectionCard status={googleStatus} isLoading={googleLoading} />
           </div>
-          {isLoading ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <RefreshCw className="size-8 animate-spin text-muted-foreground" />
-              </CardContent>
-            </Card>
-          ) : syncConfigs && syncConfigs.length > 0 ? (
-            <SyncConfigsList syncConfigs={syncConfigs} />
-          ) : (
-            <EmptySyncConfigsList bothConnected={bothConnected} isLoading={isLoading} />
-          )}
+
+          {/* Quick Stats Section */}
+          <div className="mb-12 animate-fade-in-delayed-more">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
+              <h2 className="text-foreground text-2xl font-bold">
+                Performance Metrics
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <StatCard
+                icon={<ArrowLeftRight className="w-5 h-5 text-cyan-400" />}
+                title="Active Syncs"
+                value={activeSyncsCount.toString()}
+                description="Currently running"
+                isLoading={isLoading}
+                accentColor="cyan"
+              />
+              <StatCard
+                icon={<Activity className="w-5 h-5 text-blue-400" />}
+                title="Total Syncs"
+                value={totalSyncsCount.toString()}
+                description="Configurations created"
+                isLoading={isLoading}
+                accentColor="blue"
+              />
+              <StatCard
+                icon={<Clock className="w-5 h-5 text-emerald-400" />}
+                title="Last Sync"
+                value={formatLastSync(lastSyncTime)}
+                description="Most recent activity"
+                isLoading={isLoading}
+                accentColor="emerald"
+              />
+            </div>
+          </div>
+
+          {/* Active Sync Configurations */}
+          <div className="animate-fade-in-delayed-more">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
+                <h2 className="text-foreground text-2xl font-bold">
+                  Sync Configurations
+                </h2>
+              </div>
+              <Button
+                disabled={!bothConnected || isLoading}
+                onClick={() => navigate('/sync/new')}
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Sync
+              </Button>
+            </div>
+            {isLoading ? (
+              <Card className="border-cyan-500/20 bg-card/80 backdrop-blur-sm">
+                <CardContent className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <RefreshCw className="w-8 h-8 animate-spin text-cyan-400" />
+                    <span className="text-sm text-muted-foreground font-mono">Loading syncs...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : syncConfigs && syncConfigs.length > 0 ? (
+              <SyncConfigsList syncConfigs={syncConfigs} />
+            ) : (
+              <EmptySyncConfigsList bothConnected={bothConnected} isLoading={isLoading} />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -180,48 +232,72 @@ function AirtableConnectionCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="h-11.5 w-11.5 bg-muted flex items-center justify-center rounded-full">
-            <Database className="size-6 text-orange-600" />
+    <Card className="relative group border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden transition-all duration-500 hover:border-cyan-500/40 hover:shadow-lg hover:shadow-cyan-500/10">
+      {/* Glow Effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+      <CardHeader className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
+            <Database className="w-6 h-6 text-white" />
           </div>
           {isLoading ? (
-            <div className="animate-pulse">
-              <div className="h-6 w-6 bg-muted rounded-full"></div>
-            </div>
+            <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
           ) : status?.isConnected ? (
-            <CheckCircle2 className="size-6 text-success" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md animate-pulse" />
+              <CheckCircle2 className="w-6 h-6 text-emerald-400 relative" />
+            </div>
           ) : (
-            <XCircle className="size-6 text-muted-foreground" />
+            <XCircle className="w-6 h-6 text-muted-foreground" />
           )}
         </div>
+        <CardTitle className="text-foreground text-xl mb-2">Airtable</CardTitle>
+        <div className="h-12">
+          <CardDescription className="text-sm">
+            {isLoading ? (
+              <span className="font-mono text-cyan-400">Checking connection...</span>
+            ) : status?.isConnected ? (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 font-semibold font-mono text-xs">CONNECTED</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {status.accountId ? `Account: ${status.accountId}` : "Ready to sync"}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  <span className="text-muted-foreground font-semibold font-mono text-xs">DISCONNECTED</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Connect to start syncing
+                </div>
+              </>
+            )}
+          </CardDescription>
+        </div>
       </CardHeader>
-      <CardContent>
-        <CardTitle className="mb-2">Airtable</CardTitle>
-        <CardDescription className="mb-4">
-          {isLoading
-            ? "Checking connection..."
-            : status?.isConnected
-            ? status.accountId
-              ? `Connected to account ${status.accountId}`
-              : "Connected"
-            : "Not connected"}
-        </CardDescription>
+      <CardContent className="relative">
         {!status?.isConnected && !isLoading && (
           <Button
             onClick={handleConnect}
             disabled={isConnecting}
-            size="sm"
-            className="w-full"
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all duration-300"
           >
             {isConnecting ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
+                <span className="font-mono">Connecting...</span>
               </>
             ) : (
-              "Connect Airtable"
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Connect Airtable
+              </>
             )}
           </Button>
         )}
@@ -229,14 +305,13 @@ function AirtableConnectionCard({
           <Button
             onClick={handleDisconnect}
             disabled={isDisconnecting}
-            size="sm"
-            variant="destructive"
-            className="w-full"
+            variant="outline"
+            className="w-full border-red-500/30 hover:border-red-500 hover:bg-red-500/5 transition-all duration-300"
           >
             {isDisconnecting ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Disconnecting...
+                <span className="font-mono">Disconnecting...</span>
               </>
             ) : (
               <>
@@ -295,46 +370,72 @@ function GoogleSheetsConnectionCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="h-11.5 w-11.5 bg-muted flex items-center justify-center rounded-full">
-            <Sheet className="size-6 text-green-600" />
+    <Card className="relative group border-emerald-500/20 bg-card/80 backdrop-blur-sm overflow-hidden transition-all duration-500 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10">
+      {/* Glow Effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+      <CardHeader className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
+            <Sheet className="w-6 h-6 text-white" />
           </div>
           {isLoading ? (
-            <div className="animate-pulse">
-              <div className="h-6 w-6 bg-muted rounded-full"></div>
-            </div>
+            <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
           ) : status?.isConnected ? (
-            <CheckCircle2 className="size-6 text-success" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md animate-pulse" />
+              <CheckCircle2 className="w-6 h-6 text-emerald-400 relative" />
+            </div>
           ) : (
-            <XCircle className="size-6 text-muted-foreground" />
+            <XCircle className="w-6 h-6 text-muted-foreground" />
           )}
         </div>
+        <CardTitle className="text-foreground text-xl mb-2">Google Sheets</CardTitle>
+        <div className="h-12">
+          <CardDescription className="text-sm">
+            {isLoading ? (
+              <span className="font-mono text-cyan-400">Checking connection...</span>
+            ) : status?.isConnected ? (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 font-semibold font-mono text-xs">CONNECTED</span>
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {status.googleAccountEmail || "Ready to sync"}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  <span className="text-muted-foreground font-semibold font-mono text-xs">DISCONNECTED</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Connect to start syncing
+                </div>
+              </>
+            )}
+          </CardDescription>
+        </div>
       </CardHeader>
-      <CardContent>
-        <CardTitle className="mb-2">Google Sheets</CardTitle>
-        <CardDescription className="mb-4">
-          {isLoading
-            ? "Checking connection..."
-            : status?.isConnected
-            ? status.googleAccountEmail || "Connected"
-            : "Not connected"}
-        </CardDescription>
+      <CardContent className="relative">
         {!status?.isConnected && !isLoading && (
           <Button
             onClick={handleConnect}
             disabled={isConnecting}
-            size="sm"
-            className="w-full"
+            className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all duration-300"
           >
             {isConnecting ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
+                <span className="font-mono">Connecting...</span>
               </>
             ) : (
-              "Connect Google Sheets"
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Connect Google Sheets
+              </>
             )}
           </Button>
         )}
@@ -342,14 +443,13 @@ function GoogleSheetsConnectionCard({
           <Button
             onClick={handleDisconnect}
             disabled={isDisconnecting}
-            size="sm"
-            variant="destructive"
-            className="w-full"
+            variant="outline"
+            className="w-full border-red-500/30 hover:border-red-500 hover:bg-red-500/5 transition-all duration-300"
           >
             {isDisconnecting ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Disconnecting...
+                <span className="font-mono">Disconnecting...</span>
               </>
             ) : (
               <>
@@ -370,33 +470,48 @@ function StatCard({
   value,
   description,
   isLoading,
+  accentColor,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
   description: string;
   isLoading?: boolean;
+  accentColor?: 'cyan' | 'blue' | 'emerald';
 }) {
+  const borderColor = {
+    cyan: 'border-cyan-500/20 hover:border-cyan-500/40',
+    blue: 'border-blue-500/20 hover:border-blue-500/40',
+    emerald: 'border-emerald-500/20 hover:border-emerald-500/40',
+  }[accentColor || 'cyan'];
+
+  const glowColor = {
+    cyan: 'from-cyan-500/5',
+    blue: 'from-blue-500/5',
+    emerald: 'from-emerald-500/5',
+  }[accentColor || 'cyan'];
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="h-11.5 w-11.5 bg-muted flex items-center justify-center rounded-full">
+    <Card className={`relative group ${borderColor} bg-card/80 backdrop-blur-sm overflow-hidden transition-all duration-500 hover:shadow-lg`}>
+      {/* Glow Effect */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${glowColor} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+      <CardHeader className="relative pb-3">
+        <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center backdrop-blur-sm">
           {icon}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative">
         {isLoading ? (
           <div className="animate-pulse space-y-2">
-            <div className="h-8 w-16 bg-muted rounded"></div>
-            <div className="h-4 w-24 bg-muted rounded"></div>
+            <div className="h-8 w-16 bg-muted/50 rounded" />
+            <div className="h-4 w-24 bg-muted/50 rounded" />
           </div>
         ) : (
           <>
-            <h4 className="text-title-md text-foreground font-bold">{value}</h4>
-            <span className="text-muted-foreground text-sm font-medium">
-              {title}
-            </span>
-            <p className="text-muted-foreground text-xs mt-1">{description}</p>
+            <div className="text-4xl font-bold text-gradient-sync mb-1">{value}</div>
+            <div className="text-sm text-foreground font-medium mb-1">{title}</div>
+            <div className="text-xs text-muted-foreground">{description}</div>
           </>
         )}
       </CardContent>
@@ -414,55 +529,93 @@ function SyncConfigsList({ syncConfigs }: { syncConfigs: any[] }) {
       case 'SHEETS_TO_AIRTABLE':
         return 'Sheets → Airtable';
       case 'BIDIRECTIONAL':
-        return 'Two-way';
+        return 'Two-way sync';
       default:
         return direction;
     }
   };
 
+  const getSyncDirectionIcon = (direction: string) => {
+    switch (direction) {
+      case 'BIDIRECTIONAL':
+        return <ArrowLeftRight className="w-3.5 h-3.5" />;
+      default:
+        return <TrendingUp className="w-3.5 h-3.5" />;
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {syncConfigs.map((config) => (
-        <Card key={config.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/sync/${config.id}`)}>
-          <CardContent className="pt-6">
+      {syncConfigs.map((config, index) => (
+        <Card
+          key={config.id}
+          className="relative group border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-cyan-500/40 hover:shadow-lg hover:shadow-cyan-500/10 cursor-pointer"
+          onClick={() => navigate(`/sync/${config.id}`)}
+          style={{
+            animationDelay: `${index * 0.1}s`,
+          }}
+        >
+          {/* Glow Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+          <CardContent className="pt-6 relative">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="text-foreground font-semibold text-lg mb-2">{config.name}</h4>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                  <span className="flex items-center gap-1">
-                    <Database className="size-4 text-orange-600" />
-                    {config.airtableTableName || 'Airtable Table'}
-                  </span>
-                  <ArrowLeftRight className="size-4" />
-                  <span className="flex items-center gap-1">
-                    <Sheet className="size-4 text-green-600" />
-                    {config.googleSheetName || 'Google Sheet'}
-                  </span>
+                <div className="flex items-center gap-3 mb-3">
+                  <h4 className="text-foreground font-semibold text-lg">{config.name}</h4>
+                  {config.isActive ? (
+                    <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-xs font-mono text-emerald-400">ACTIVE</span>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1 rounded-full bg-muted/50 border border-border">
+                      <span className="text-xs font-mono text-muted-foreground">PAUSED</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <ArrowLeftRight className="size-3" />
-                    {getSyncDirectionLabel(config.syncDirection)}
-                  </span>
-                  {config.lastSyncAt && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3" />
-                      Last synced {new Date(config.lastSyncAt).toLocaleDateString()}
+
+                {/* Platform Connection */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                    <Database className="w-3.5 h-3.5 text-orange-400" />
+                    <span className="text-xs text-foreground font-medium">
+                      {config.airtableTableName || 'Airtable Table'}
                     </span>
+                  </div>
+                  <ArrowLeftRight className="w-4 h-4 text-cyan-400" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <Sheet className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-xs text-foreground font-medium">
+                      {config.googleSheetName || 'Google Sheet'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/30">
+                    {getSyncDirectionIcon(config.syncDirection)}
+                    <span className="font-mono">{getSyncDirectionLabel(config.syncDirection)}</span>
+                  </div>
+                  {config.lastSyncAt && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/30">
+                      <Clock className="w-3 h-3" />
+                      <span className="font-mono">
+                        {new Date(config.lastSyncAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   )}
                   {config.lastSyncStatus && (
-                    <span className="flex items-center gap-1">
-                      {config.lastSyncStatus === 'success' ? '✓' : '⚠️'} {config.lastSyncStatus}
-                    </span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/30">
+                      {config.lastSyncStatus === 'success' ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      ) : (
+                        <AlertCircle className="w-3 h-3 text-yellow-400" />
+                      )}
+                      <span className="font-mono capitalize">{config.lastSyncStatus}</span>
+                    </div>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {config.isActive ? (
-                  <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded">Active</span>
-                ) : (
-                  <span className="text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 px-2 py-1 rounded">Paused</span>
-                )}
               </div>
             </div>
           </CardContent>
@@ -482,18 +635,39 @@ function EmptySyncConfigsList({
   const navigate = useNavigate();
 
   return (
-    <Card className="border-dashed">
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <AlertCircle className="size-12 text-muted-foreground mb-4" />
-        <h3 className="text-foreground text-lg font-semibold mb-2">
+    <Card className="relative border-dashed border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '30px 30px',
+          }}
+          className="w-full h-full"
+        />
+      </div>
+
+      <CardContent className="relative flex flex-col items-center justify-center py-16">
+        <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-6">
+          <AlertCircle className="w-8 h-8 text-cyan-400" />
+        </div>
+        <h3 className="text-foreground text-xl font-bold mb-2">
           No sync configurations yet
         </h3>
-        <p className="text-muted-foreground text-center mb-6 max-w-md">
+        <p className="text-muted-foreground text-center mb-8 max-w-md text-sm">
           {bothConnected
-            ? "You're all set! Click the button below to create your first sync."
-            : "Connect both Airtable and Google Sheets to start creating sync configurations."}
+            ? "You're all connected! Create your first sync configuration to start automating your data flow."
+            : "Connect both Airtable and Google Sheets above to start creating powerful sync configurations."}
         </p>
-        <Button disabled={!bothConnected || isLoading} variant="outline" onClick={() => navigate('/sync/new')}>
+        <Button
+          disabled={!bothConnected || isLoading}
+          onClick={() => navigate('/sync/new')}
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105"
+        >
+          <Plus className="w-4 h-4 mr-2" />
           Create Your First Sync
         </Button>
       </CardContent>
