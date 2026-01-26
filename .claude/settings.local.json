@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node debug-airtable.js:*)",
+      "Bash(node test-airtable-api.cjs:*)",
+      "Bash(timeout 60 wasp build:*)",
+      "Bash(wasp build:*)",
+      "Bash(wasp clean:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma:*)",
+      "Bash(node test-google-connection.cjs:*)",
+      "Bash(node test-google-api.cjs)",
+      "Bash(wasp start)",
+      "Bash(wasp compile:*)",
+      "Bash(npm run db-seed:*)",
+      "Bash(wasp db studio:*)",
+      "Bash(find:*)",
+      "Bash(wasp db execute:*)",
+      "Bash(node:*)",
+      "Bash(lsof:*)",
+      "Bash(cd /Volumes/ReoXT/Cursor Files/BaseSync && npx tsc:*)",
+      "Bash(chmod:*)",
+      "Bash(./context-monitor.sh:*)",
+      "Bash(test -f:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

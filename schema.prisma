@@ -1,0 +1,277 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+
+  email                     String?         @unique
+  username                  String?         @unique
+  isAdmin                   Boolean         @default(false)
+
+  paymentProcessorUserId    String?         @unique
+  lemonSqueezyCustomerPortalUrl String?     // You can delete this if you're not using Lemon Squeezy as your payments processor.
+  subscriptionStatus        String?         // 'active', 'cancel_at_period_end', 'past_due', 'deleted'
+  subscriptionPlan          String?         // 'starter', 'pro', 'business'
+  datePaid                  DateTime?
+  credits                   Int             @default(3)
+
+  // Trial period tracking (14-day free trial)
+  trialStartedAt            DateTime        @default(now())  // When user started trial (same as createdAt for new users)
+  trialEndsAt               DateTime?       // Calculated: trialStartedAt + 14 days (set on creation)
+
+  gptResponses              GptResponse[]
+  contactFormMessages       ContactFormMessage[]
+  tasks                     Task[]
+  files                     File[]
+  airtableConnections       AirtableConnection[]
+  googleSheetsConnections   GoogleSheetsConnection[]
+  syncConfigs               SyncConfig[]
+  usageStats                UsageStats[]
+}
+
+model GptResponse {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+
+  content                   String
+}
+
+model Task {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+
+  description               String
+  time                      String          @default("1")
+  isDone                    Boolean         @default(false)
+}
+
+model File {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+
+  name                      String
+  type                      String
+  s3Key                     String
+}
+
+model DailyStats {
+  id                               Int             @id @default(autoincrement())
+  date                             DateTime        @default(now()) @unique
+
+  totalViews                       Int             @default(0)
+  prevDayViewsChangePercent        String          @default("0")
+  userCount                        Int             @default(0)
+  paidUserCount                    Int             @default(0)
+  userDelta                        Int             @default(0)
+  paidUserDelta                    Int             @default(0)
+  totalRevenue                     Float           @default(0)
+  totalProfit                      Float           @default(0)
+
+  sources                          PageViewSource[]
+}
+
+model PageViewSource {
+  @@id([date, name])
+  name                     String
+  date                     DateTime        @default(now())
+
+  dailyStats               DailyStats?     @relation(fields: [dailyStatsId], references: [id])
+  dailyStatsId             Int?
+
+  visitors                 Int
+}
+
+model Logs {
+  id                       Int             @id @default(autoincrement())
+  createdAt                DateTime        @default(now())
+
+  message                  String
+  level                    String
+}
+
+model ContactFormMessage {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+
+  content                   String
+  isRead                    Boolean         @default(false)
+  repliedAt                 DateTime?
+}
+
+// ============================================================================
+// BASESYNC MODELS
+// ============================================================================
+
+model AirtableConnection {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  user                      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String
+
+  // OAuth credentials (store encrypted in application layer)
+  accessToken               String          // Encrypted with ENCRYPTION_KEY
+  refreshToken              String?         // Encrypted with ENCRYPTION_KEY
+  tokenExpiry               DateTime?
+
+  // Token refresh tracking
+  lastRefreshAttempt        DateTime?       // Last time we tried to refresh
+  lastRefreshError          String?         // Last error during refresh
+  needsReauth               Boolean         @default(false) // Flag indicating reauth required
+
+  // Airtable-specific metadata
+  accountId                 String?         // Airtable account/workspace ID
+
+  @@index([userId])
+  @@unique([userId]) // One Airtable connection per user
+}
+
+model GoogleSheetsConnection {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  user                      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String
+
+  // OAuth credentials (store encrypted in application layer)
+  accessToken               String          // Encrypted with ENCRYPTION_KEY
+  refreshToken              String?         // Encrypted with ENCRYPTION_KEY
+  tokenExpiry               DateTime?
+
+  // Token refresh tracking
+  lastRefreshAttempt        DateTime?       // Last time we tried to refresh
+  lastRefreshError          String?         // Last error during refresh
+  needsReauth               Boolean         @default(false) // Flag indicating reauth required
+
+  // Google-specific metadata
+  googleAccountEmail        String?         // User's Google account email
+
+  @@index([userId])
+  @@unique([userId]) // One Google Sheets connection per user
+}
+
+enum SyncDirection {
+  AIRTABLE_TO_SHEETS        // One-way: Airtable → Google Sheets
+  SHEETS_TO_AIRTABLE        // One-way: Google Sheets → Airtable
+  BIDIRECTIONAL             // Two-way sync
+}
+
+enum ConflictResolution {
+  AIRTABLE_WINS             // Airtable record takes precedence
+  SHEETS_WINS               // Google Sheets record takes precedence
+  NEWEST_WINS               // Most recently updated record wins
+}
+
+model SyncConfig {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  user                      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String
+
+  // User-friendly name for this sync
+  name                      String
+
+  // Airtable source/target
+  airtableBaseId            String
+  airtableTableId           String
+  airtableTableName         String?         // Cached for display purposes
+
+  // Google Sheets source/target
+  googleSpreadsheetId       String
+  googleSheetId             String          // Sheet tab ID (gid)
+  googleSheetName           String?         // Cached for display purposes
+
+  // Sync configuration
+  fieldMappings             String          // JSON: { "airtableFieldId": "sheetsColumnIndex", ... }
+  syncDirection             SyncDirection   @default(BIDIRECTIONAL)
+  conflictResolution        ConflictResolution @default(NEWEST_WINS)
+
+  // Status
+  isActive                  Boolean         @default(true)
+  lastSyncAt                DateTime?
+  lastSyncStatus            String?         // 'success', 'failed', 'partial'
+  lastErrorAt               DateTime?       // When last error occurred
+  lastErrorMessage          String?         // User-friendly error message for dashboard display
+
+  // Relations
+  syncLogs                  SyncLog[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([lastSyncAt])
+}
+
+enum SyncStatus {
+  SUCCESS                   // Sync completed successfully
+  FAILED                    // Sync failed completely
+  PARTIAL                   // Sync completed with some errors
+}
+
+model SyncLog {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+
+  syncConfig                SyncConfig      @relation(fields: [syncConfigId], references: [id], onDelete: Cascade)
+  syncConfigId              String
+
+  // Sync execution details
+  status                    SyncStatus
+  recordsSynced             Int             @default(0)
+  recordsFailed             Int             @default(0)
+  errors                    String?         // JSON: [{ "record": "...", "error": "..." }, ...]
+
+  startedAt                 DateTime        @default(now())
+  completedAt               DateTime?
+
+  // Additional context
+  triggeredBy               String?         // 'manual', 'scheduled', 'webhook'
+  direction                 String?         // Actual direction used for this sync
+
+  @@index([syncConfigId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model UsageStats {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  lastUpdatedAt             DateTime        @updatedAt
+
+  user                      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String
+
+  // Month tracking (first day of the month for consistency)
+  month                     DateTime        // e.g., 2025-01-01 for January 2025
+
+  // Usage metrics
+  recordsSynced             Int             @default(0)
+  syncConfigsCreated        Int             @default(0)
+
+  @@unique([userId, month])   // One usage record per user per month
+  @@index([userId])
+  @@index([month])
+}

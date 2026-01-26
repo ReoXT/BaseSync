@@ -1,0 +1,14 @@
+{
+  "files.associations": {
+    "*.wasp": "wasp"
+  },
+  "[wasp]": {
+    "editor.defaultFormatter": "wasp-lang.wasp",
+    "editor.formatOnSave": false
+  },
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  }
+}
