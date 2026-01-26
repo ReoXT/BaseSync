@@ -1,19 +1,13 @@
-import ExamplesCarousel from "./components/ExamplesCarousel";
 import FAQ from "./components/FAQ";
-import FeaturesGrid from "./components/FeaturesGrid";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import ProblemSection from "./components/ProblemSection";
-import SolutionSection from "./components/SolutionSection";
-import Testimonials from "./components/Testimonials";
+import PricingSection from "./components/PricingSection";
+import SocialProofSection from "./components/SocialProofSection";
 import {
-  examples,
   faqs,
-  features,
   footerNavigation,
-  testimonials,
 } from "./contentSections";
-import AIReady from "./ExampleHighlightedFeature";
 
 export default function LandingPage() {
   return (
@@ -21,11 +15,8 @@ export default function LandingPage() {
       <main className="isolate">
         <Hero />
         <ProblemSection />
-        <SolutionSection />
-        <ExamplesCarousel examples={examples} />
-        <AIReady />
-        <FeaturesGrid features={features} />
-        <Testimonials testimonials={testimonials} />
+        <PricingSection />
+        <SocialProofSection />
         <FAQ faqs={faqs} />
       </main>
       <Footer footerNavigation={footerNavigation} />

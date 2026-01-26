@@ -1,11 +1,83 @@
 /**
- * Problem Section - "Why Zapier Doesn't Cut It"
- * Highlights pain points with existing solutions to establish product need
+ * Problem vs Solution Section - Tech-Minimalist Glassmorphism
+ * Bold side-by-side comparison: Zapier limitations vs BaseSync solutions
  */
 
+import { useEffect, useRef, useState } from "react";
+
+const problems = [
+  {
+    title: "No two-way sync",
+    description: "Zapier literally can't do this",
+  },
+  {
+    title: "Linked records show as cryptic IDs",
+    description: "Like \"rec123abc\" instead of names",
+  },
+  {
+    title: "Only syncs new records",
+    description: "No historical data",
+  },
+  {
+    title: "Two opposite Zaps create infinite loops",
+    description: "Endless triggering chaos",
+  },
+  {
+    title: "Attachments don't transfer properly",
+    description: "URLs get corrupted",
+  },
+];
+
+const solutions = [
+  {
+    title: "True bidirectional sync",
+    description: "Smart conflict resolution built in",
+  },
+  {
+    title: "Linked records show actual names",
+    description: "Automatically resolved, no cryptic IDs",
+  },
+  {
+    title: "Initial bulk sync for all existing data",
+    description: "Thousands of rows? No problem.",
+  },
+  {
+    title: "Attachment URLs transferred correctly",
+    description: "Files work perfectly, every time",
+  },
+  {
+    title: "Set it once, syncs every 5 minutes",
+    description: "Runs forever in the background",
+  },
+];
+
 export default function ProblemSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1, rootMargin: "-50px" }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
+    <section ref={sectionRef} className="relative py-24 md:py-32 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 -z-10">
         <div
@@ -15,178 +87,224 @@ export default function ProblemSection() {
               linear-gradient(to right, currentColor 1px, transparent 1px),
               linear-gradient(to bottom, currentColor 1px, transparent 1px)
             `,
-            backgroundSize: '60px 60px',
+            backgroundSize: "60px 60px",
           }}
+        />
+        {/* Dual Gradient Orbs */}
+        <div
+          className="absolute -top-40 left-1/4 w-96 h-96 rounded-full bg-red-500/5 blur-3xl animate-pulse-slower"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-40 right-1/4 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+          aria-hidden="true"
         />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/20 bg-red-500/5 backdrop-blur-sm mb-6">
-            <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <div
+          className={`text-center mb-16 transition-all duration-700 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-6">
+            <svg
+              className="w-4 h-4 text-cyan-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
-            <span className="text-sm font-mono text-red-400">The Problem</span>
+            <span className="text-sm font-mono text-cyan-400">The Comparison</span>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Why Zapier Doesn't Cut It
+            Why Zapier Falls Short
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Zapier's limitations turn simple sync tasks into broken workflows and frustrating workarounds
+            See exactly how BaseSync solves the problems Zapier can't handle
           </p>
         </div>
 
-        {/* Problem Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <ProblemCard
-            icon={<NoSyncIcon />}
-            title="No Two-Way Sync"
-            description="Zapier literally can't do this"
-            detail="Only one-direction flows. Need both ways? Two Zaps = infinite loop nightmare."
-            delay={0}
-          />
+        {/* Split Comparison Container */}
+        <div
+          className={`grid lg:grid-cols-2 gap-8 transition-all duration-700 delay-100 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          {/* LEFT: Problems (Red themed) */}
+          <div className="relative rounded-3xl border border-red-500/20 bg-gradient-to-br from-red-500/5 to-red-600/5 backdrop-blur-sm p-8 md:p-10 overflow-hidden group hover:border-red-500/30 transition-all duration-300">
+            {/* Hover Glow */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.05), transparent 70%)",
+              }}
+            />
 
-          <ProblemCard
-            icon={<CrypticIDIcon />}
-            title="Cryptic Record IDs"
-            description="Linked records show as rec123abc"
-            detail="Meaningless IDs instead of readable names. Good luck understanding your data."
-            delay={0.1}
-          />
+            <div className="relative">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-red-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-foreground">
+                  Why Zapier Doesn't Cut It
+                </h3>
+              </div>
 
-          <ProblemCard
-            icon={<NewOnlyIcon />}
-            title="New Records Only"
-            description="No historical data sync"
-            detail="Existing records? Manual export/import. Hundreds of rows? Have fun."
-            delay={0.2}
-          />
+              {/* Problems List */}
+              <div className="space-y-5">
+                {problems.map((problem, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-4 group/item"
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                  >
+                    {/* X Icon */}
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center mt-0.5 group-hover/item:bg-red-500/20 transition-colors duration-300">
+                      <svg
+                        className="w-4 h-4 text-red-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </div>
 
-          <ProblemCard
-            icon={<InfiniteLoopIcon />}
-            title="Infinite Loop Hell"
-            description="Two opposite Zaps create chaos"
-            detail="Bidirectional needs two Zaps. They trigger each other endlessly. System meltdown."
-            delay={0.3}
-          />
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-foreground leading-relaxed">
+                        {problem.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {problem.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          <ProblemCard
-            icon={<AttachmentIcon />}
-            title="Broken Attachments"
-            description="Files don't transfer properly"
-            detail="Attachment fields? URLs get mangled. Downloads break. Data corruption galore."
-            delay={0.4}
-          />
+          {/* RIGHT: Solutions (Cyan/Green themed) */}
+          <div className="relative rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 backdrop-blur-sm p-8 md:p-10 overflow-hidden group hover:border-cyan-500/40 transition-all duration-300 shadow-lg shadow-cyan-500/10">
+            {/* Hover Glow */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.1), transparent 70%)",
+              }}
+            />
+
+            <div className="relative">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-cyan-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-foreground">
+                  How BaseSync Solves This
+                </h3>
+              </div>
+
+              {/* Solutions List */}
+              <div className="space-y-5">
+                {solutions.map((solution, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-4 group/item"
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                  >
+                    {/* Checkmark Icon */}
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center mt-0.5 group-hover/item:bg-cyan-500/20 transition-colors duration-300">
+                      <svg
+                        className="w-4 h-4 text-cyan-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-foreground leading-relaxed">
+                        {solution.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {solution.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-16 text-center">
-          <p className="text-lg font-semibold text-foreground mb-2">
-            Sound familiar?
-          </p>
-          <p className="text-muted-foreground">
-            BaseSync was built to solve exactly these problems.
+        <div
+          className={`mt-16 text-center transition-all duration-700 delay-300 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
+          <p className="text-sm text-muted-foreground">
+            <span className="text-cyan-400 font-semibold">BaseSync</span> handles all of
+            this automatically — no configuration, no maintenance, no headaches.
           </p>
         </div>
       </div>
     </section>
-  );
-}
-
-// Problem Card Component
-function ProblemCard({
-  icon,
-  title,
-  description,
-  detail,
-  delay,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  detail: string;
-  delay: number;
-}) {
-  return (
-    <div
-      className="group relative rounded-xl border border-red-500/20 bg-gradient-to-br from-red-950/10 to-red-900/5 dark:from-red-950/20 dark:to-red-900/10 p-6 transition-all duration-300 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 hover:-translate-y-1"
-      style={{
-        animation: `fade-in-up 0.6s ease-out ${delay}s both`,
-      }}
-    >
-      {/* Gradient Overlay on Hover */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500/0 to-red-500/0 group-hover:from-red-500/5 group-hover:to-red-500/10 transition-all duration-300" />
-
-      <div className="relative">
-        {/* Icon */}
-        <div className="mb-4 w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform duration-300">
-          {icon}
-        </div>
-
-        {/* Content */}
-        <h3 className="text-lg font-bold text-foreground mb-2 leading-tight">
-          {title}
-        </h3>
-        <p className="text-sm font-medium text-red-400 mb-3 leading-snug">
-          {description}
-        </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {detail}
-        </p>
-
-        {/* X Mark Badge */}
-        <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-          <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Custom Icons for Each Problem
-function NoSyncIcon() {
-  return (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-      <line x1="2" y1="2" x2="22" y2="22" strokeWidth={2.5} stroke="currentColor" opacity={0.6} />
-    </svg>
-  );
-}
-
-function CrypticIDIcon() {
-  return (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-    </svg>
-  );
-}
-
-function NewOnlyIcon() {
-  return (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12h8" opacity={0.6} />
-    </svg>
-  );
-}
-
-function InfiniteLoopIcon() {
-  return (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-  );
-}
-
-function AttachmentIcon() {
-  return (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-      <line x1="18" y1="6" x2="6" y2="18" strokeWidth={2.5} stroke="currentColor" opacity={0.4} />
-    </svg>
   );
 }

@@ -102,9 +102,48 @@ export const testimonials = [
 export const faqs = [
   {
     id: 1,
-    question: "Whats the meaning of life?",
-    answer: "42.",
-    href: "https://en.wikipedia.org/wiki/42_(number)",
+    question: "How is this different from Zapier?",
+    answer: "Zapier can only do one way sync and doesn't handle linked records properly. BaseSync offers true bidirectional sync, displays linked records as actual names (not cryptic IDs like 'rec123abc'), syncs historical data in bulk, and handles attachments correctly. Plus, Zapier's two opposite Zaps create infinite loops, BaseSync has smart conflict resolution built in.",
+  },
+  {
+    id: 2,
+    question: "Is my data secure?",
+    answer: "Absolutely. We use OAuth 2.0 for authentication, we never see your Airtable or Google passwords. Your credentials are encrypted at rest, and we only access the specific bases and spreadsheets you authorize. All data transfers use HTTPS encryption, and we're SOC 2 compliant.",
+  },
+  {
+    id: 3,
+    question: "What happens if both sides change the same record?",
+    answer: "You choose the conflict resolution strategy when setting up your sync: Airtable wins, Sheets wins, or Newest wins (the most recent change takes precedence). BaseSync tracks modification timestamps to detect conflicts automatically and applies your chosen strategy seamlessly.",
+  },
+  {
+    id: 4,
+    question: "Can I sync multiple tables?",
+    answer: "Yes! Create a separate sync configuration for each Airtable table and Google Sheet pair you want to sync. On the Pro plan you can have up to 3 active syncs, and on the Business plan you can have up to 10.",
+  },
+  {
+    id: 5,
+    question: "What about Airtable views vs tables?",
+    answer: "Currently, BaseSync syncs entire Airtable tables (not filtered views). We sync all records that match your field mappings. Filtered views and custom query support is on our roadmap, if this is critical for you, reach out to us!",
+  },
+  {
+    id: 6,
+    question: "Why is BaseSync cheaper than Unito?",
+    answer: "We're specialists. Unito connects 60+ different tools, so they need to maintain integrations for everything. We do one thing, Airtable ↔ Google Sheets and do it exceptionally well. This focus lets us offer better performance, more features (like linked record names), and lower prices.",
+  },
+  {
+    id: 7,
+    question: "What happens if I exceed my record limit?",
+    answer: "We'll notify you when you hit 80% of your monthly record limit, giving you time to upgrade. At 100%, syncs will pause automatically, but your data stays completely safe. You can upgrade instantly to resume syncing, or wait until the next billing cycle when your limit resets.",
+  },
+  {
+    id: 8,
+    question: "Can I change plans anytime?",
+    answer: "Yes! You can upgrade to a higher plan instantly and the change takes effect immediately. If you downgrade to a lower plan, the change will apply at the end of your current billing cycle so you can use what you've already paid for.",
+  },
+  {
+    id: 9,
+    question: "Is there a free trial?",
+    answer: "Yes! All new users get a 14-day free trial with full Pro tier features (3 syncs, 5,000 records, 5-minute interval). No credit card required to start. Try it risk-free and see how much time BaseSync can save your team.",
   },
 ];
 

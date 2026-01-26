@@ -941,17 +941,17 @@ Consider a side-by-side comparison visual.
 ### Prompt 11.4: Pricing Section <!-- UPDATED -->
 
 ```
-Add pricing section matching the Stripe tiers. Use anchoring strategy - show Business first:
+Add pricing section matching the Stripe tiers. Use anchoring strategy:
 
-Three pricing cards (displayed in this order):
-1. Business - $39/mo ($31.20 annual) - "For growing teams"
-   - 10 syncs, unlimited records, 5-min sync, priority support
-   
+Three pricing cards:
+1. Starter - $9/mo ($7.20 annual) - "For individuals"
+   - 1 sync, 1,000 records, 15-min sync
+
 2. Pro - $19/mo ($15.20 annual) - "MOST POPULAR" badge
    - 3 syncs, 5,000 records, 5-min sync
-   
-3. Starter - $9/mo ($7.20 annual) - "For individuals"
-   - 1 sync, 1,000 records, 15-min sync
+
+3. Business - $39/mo ($31.20 annual) - "For growing teams"
+   - 10 syncs, unlimited records, 5-min sync, priority support
 
 Include: "14-day free trial, no credit card required"
 Show annual toggle with "Save 20%" label.

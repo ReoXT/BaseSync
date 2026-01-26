@@ -22,7 +22,9 @@
       "Bash(chmod:*)",
       "Bash(./context-monitor.sh:*)",
       "Bash(test -f:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run)"
     ]
   }
 }

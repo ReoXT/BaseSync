@@ -245,6 +245,37 @@
   .animate-travel-reverse-3 {
     animation: travel-reverse-3 2s ease-in-out 0.4s infinite;
   }
+
+  /* Accordion Animations - Soft & Refined */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+      opacity: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+      opacity: 1;
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+      opacity: 1;
+    }
+    to {
+      height: 0;
+      opacity: 0;
+    }
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 }
 
 /* third-party libraries CSS */
