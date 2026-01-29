@@ -180,81 +180,111 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
   return (
     <div className="space-y-6">
       {/* Spreadsheet Selection */}
-      <div className="space-y-2">
-        <Label htmlFor="google-spreadsheet">Google Spreadsheet</Label>
+      <div className="space-y-3 animate-fade-in">
+        <Label htmlFor="google-spreadsheet" className="text-sm font-medium flex items-center gap-2">
+          <div className="w-1 h-4 bg-gradient-to-b from-emerald-500 to-green-600 rounded-full" />
+          Google Spreadsheet
+        </Label>
         {isLoadingSpreadsheets ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="relative rounded-xl border border-emerald-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+            <div className="flex flex-col items-center justify-center gap-3 relative">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+              <span className="text-sm font-mono text-emerald-400">Fetching spreadsheets...</span>
+            </div>
           </div>
         ) : (
-          <Select value={selectedSpreadsheetId} onValueChange={handleSpreadsheetChange}>
-            <SelectTrigger id="google-spreadsheet">
-              <SelectValue placeholder="Select a Google Spreadsheet" />
-            </SelectTrigger>
-            <SelectContent>
-              {spreadsheets?.map((spreadsheet: GoogleSpreadsheet) => (
-                <SelectItem key={spreadsheet.id} value={spreadsheet.id}>
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                    <span>{spreadsheet.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {selectedSpreadsheetId && (
-          <p className="text-xs text-muted-foreground">
-            Selected:{" "}
-            {spreadsheets?.find((s: GoogleSpreadsheet) => s.id === selectedSpreadsheetId)?.name}
-          </p>
+          <div className="relative group">
+            <Select value={selectedSpreadsheetId} onValueChange={handleSpreadsheetChange}>
+              <SelectTrigger id="google-spreadsheet" className="h-12 border-emerald-500/20 hover:border-emerald-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-emerald-500/10">
+                <SelectValue placeholder="Choose your spreadsheet..." />
+              </SelectTrigger>
+              <SelectContent className="backdrop-blur-xl bg-card/95 border-emerald-500/20">
+                {spreadsheets?.map((spreadsheet: GoogleSpreadsheet) => (
+                  <SelectItem key={spreadsheet.id} value={spreadsheet.id} className="cursor-pointer">
+                    <div className="flex items-center gap-3 py-1">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
+                        <FileSpreadsheet className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="font-medium">{spreadsheet.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedSpreadsheetId && (
+              <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-fit">
+                <FileSpreadsheet className="h-3 w-3 text-emerald-400" />
+                <span className="text-xs font-mono text-foreground">
+                  {spreadsheets?.find((s: GoogleSpreadsheet) => s.id === selectedSpreadsheetId)?.name}
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Sheet Selection */}
       {selectedSpreadsheetId && (
-        <div className="space-y-2">
-          <Label htmlFor="google-sheet">Sheet</Label>
+        <div className="space-y-3 animate-fade-in">
+          <Label htmlFor="google-sheet" className="text-sm font-medium flex items-center gap-2">
+            <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
+            Sheet
+          </Label>
           {isLoadingSheets ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+              <div className="flex flex-col items-center justify-center gap-3 relative">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                <span className="text-sm font-mono text-blue-400">Loading sheets...</span>
+              </div>
             </div>
           ) : sheetsError ? (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="border-red-500/50 bg-red-500/5">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{sheetsError}</AlertDescription>
             </Alert>
           ) : sheets && sheets.length > 0 ? (
             <>
-              <Select value={selectedSheetId} onValueChange={(value) => handleSheetChange(value)}>
-                <SelectTrigger id="google-sheet">
-                  <SelectValue placeholder="Select a sheet" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sheets.map((sheet: GoogleSheet) => (
-                    <SelectItem key={sheet.sheetId} value={`${sheet.sheetId}|${sheet.title}`}>
-                      <div className="flex items-center gap-2">
-                        <Sheet className="h-4 w-4 text-blue-600" />
-                        <span>{sheet.title}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ({sheet.rowCount} rows × {sheet.columnCount} cols)
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedSheetId && (
-                <p className="text-xs text-muted-foreground">
-                  Selected:{" "}
-                  {sheets.find((s: GoogleSheet) => s.sheetId.toString() === selectedSheetId)?.title}
-                </p>
-              )}
+              <div className="relative group">
+                <Select value={selectedSheetId} onValueChange={(value) => handleSheetChange(value)}>
+                  <SelectTrigger id="google-sheet" className="h-12 border-blue-500/20 hover:border-blue-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-500/10">
+                    <SelectValue placeholder="Choose your sheet..." />
+                  </SelectTrigger>
+                  <SelectContent className="backdrop-blur-xl bg-card/95 border-blue-500/20">
+                    {sheets.map((sheet: GoogleSheet) => (
+                      <SelectItem key={sheet.sheetId} value={`${sheet.sheetId}|${sheet.title}`} className="cursor-pointer">
+                        <div className="flex items-center gap-3 py-1">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
+                            <Sheet className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{sheet.title}</span>
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {sheet.rowCount} rows × {sheet.columnCount} cols
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSheetId && (
+                  <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 w-fit">
+                    <Sheet className="h-3 w-3 text-blue-400" />
+                    <span className="text-xs font-mono text-foreground">
+                      {sheets.find((s: GoogleSheet) => s.sheetId.toString() === selectedSheetId)?.title}
+                    </span>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>No sheets found in this spreadsheet.</AlertDescription>
+            <Alert className="border-yellow-500/50 bg-yellow-500/5">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="text-yellow-600 dark:text-yellow-400">
+                No sheets found in this spreadsheet.
+              </AlertDescription>
             </Alert>
           )}
         </div>
@@ -262,84 +292,101 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
 
       {/* Sheet Preview */}
       {isLoadingPreview && (
-        <div className="rounded-md border p-6">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">Loading sheet preview...</span>
+        <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden animate-fade-in">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
+          <div className="flex flex-col items-center justify-center gap-3 relative">
+            <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+            <span className="text-sm font-mono text-cyan-400">Loading sheet preview...</span>
           </div>
         </div>
       )}
 
       {previewError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-red-500/50 bg-red-500/5 animate-fade-in">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{previewError}</AlertDescription>
         </Alert>
       )}
 
       {sheetPreview && !isLoadingPreview && (
-        <div className="space-y-4">
-          <div>
-            <Label>Sheet Preview</Label>
-            <p className="text-xs text-muted-foreground mt-1">
-              {sheetPreview.rowCount} rows × {sheetPreview.columnCount} columns
-            </p>
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-gradient-to-b from-emerald-500 to-cyan-500 rounded-full" />
+            <Label className="text-sm font-medium">Sheet Details</Label>
           </div>
 
-          <div className="rounded-md border">
-            <div className="max-h-96 overflow-auto">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-muted border-b">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground">
-                      Property
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground">
-                      Value
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  <tr className="hover:bg-muted/50">
-                    <td className="px-4 py-2 text-sm font-medium">Sheet Name</td>
-                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                      {sheetPreview.title}
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-muted/50">
-                    <td className="px-4 py-2 text-sm font-medium">Total Rows</td>
-                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                      {sheetPreview.rowCount}
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-muted/50">
-                    <td className="px-4 py-2 text-sm font-medium">Total Columns</td>
-                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                      {sheetPreview.columnCount}
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-muted/50">
-                    <td className="px-4 py-2 text-sm font-medium">Sheet ID</td>
-                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                      {sheetPreview.sheetId}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div className="relative rounded-xl border border-emerald-500/20 bg-card/50 backdrop-blur-sm overflow-hidden group">
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+            <div className="relative p-6 space-y-4">
+              {/* Sheet Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <Sheet className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Sheet Name</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{sheetPreview.title}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative rounded-lg border border-blue-500/10 bg-blue-500/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <AlertCircle className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Sheet ID</p>
+                      <p className="text-sm font-mono font-semibold text-foreground">{sheetPreview.sheetId}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative rounded-lg border border-cyan-500/10 bg-cyan-500/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                      <span className="text-lg font-bold text-cyan-400">{sheetPreview.rowCount}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Total Rows</p>
+                      <p className="text-sm font-semibold text-foreground">Available for sync</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative rounded-lg border border-purple-500/10 bg-purple-500/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                      <span className="text-lg font-bold text-purple-400">{sheetPreview.columnCount}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Total Columns</p>
+                      <p className="text-sm font-semibold text-foreground">Ready to map</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="border-t bg-muted/50 px-4 py-2">
-              <p className="text-xs text-muted-foreground">
-                Sheet structure ready for field mapping
-              </p>
+
+            <div className="border-t border-emerald-500/10 bg-muted/50 backdrop-blur-sm px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <p className="text-xs font-mono text-muted-foreground">
+                  Sheet structure ready for field mapping
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Future feature note */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              <strong>Note:</strong> Column headers will be automatically detected during field
-              mapping. Make sure your sheet has headers in the first row.
+          {/* Info Alert */}
+          <Alert className="border-cyan-500/30 bg-cyan-500/5">
+            <AlertCircle className="h-4 w-4 text-cyan-400" />
+            <AlertDescription className="text-xs text-muted-foreground">
+              <strong className="text-foreground">Note:</strong> Column headers will be automatically detected during field mapping. Make sure your sheet has headers in the first row.
             </AlertDescription>
           </Alert>
         </div>
@@ -347,20 +394,48 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
 
       {/* Helper Text */}
       {!selectedSpreadsheetId && (
-        <div className="rounded-md bg-muted p-4">
-          <p className="text-sm text-muted-foreground">
-            Select a Google Spreadsheet to get started. You'll then be able to choose a specific
-            sheet from that spreadsheet.
-          </p>
+        <div className="relative rounded-xl border border-dashed border-emerald-500/20 bg-card/30 backdrop-blur-sm p-6 overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.02]">
+            <div
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, currentColor 1px, transparent 1px),
+                  linear-gradient(to bottom, currentColor 1px, transparent 1px)
+                `,
+                backgroundSize: '30px 30px',
+              }}
+              className="w-full h-full"
+            />
+          </div>
+          <div className="relative flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">Ready to connect</p>
+              <p className="text-xs text-muted-foreground">
+                Select a Google Spreadsheet from the dropdown above to view available sheets and begin the sync setup.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Create New Sheet Option - Future Feature */}
+      {/* Coming Soon Feature */}
       {selectedSpreadsheetId && sheets && sheets.length > 0 && (
-        <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-4 border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-900 dark:text-blue-100">
-            <strong>Coming soon:</strong> Create a new sheet directly from this wizard.
-          </p>
+        <div className="relative rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5 p-4 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-50" />
+          <div className="relative flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <Sheet className="w-4 h-4 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1">Coming soon</p>
+              <p className="text-xs text-muted-foreground">
+                Create a new sheet directly from this wizard without leaving the setup flow.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

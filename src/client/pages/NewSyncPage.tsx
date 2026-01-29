@@ -154,28 +154,31 @@ export default function NewSyncPage() {
 
           {/* Progress Indicator */}
           <div className="mb-8 animate-fade-in-delayed">
-            <div className="relative">
+            <div className="relative px-5">
               {/* Progress Bar Background */}
-              <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted -z-10" />
+              <div className="absolute top-5 left-5 right-5 h-0.5 bg-muted/50" />
 
               {/* Active Progress Bar */}
               <div
-                className="absolute top-5 left-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 -z-10 transition-all duration-500"
+                className="absolute top-5 left-5 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
                 style={{
-                  width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`,
+                  width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% * (100% - 40px) / 100 + 20px)`,
                 }}
-              />
+              >
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-400 blur-sm opacity-50" />
+              </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 {STEPS.map((step, index) => (
-                  <div key={step.id} className="flex flex-col items-center">
+                  <div key={step.id} className="flex flex-col items-center" style={{ width: '80px' }}>
                     {/* Step Circle */}
                     <div
                       className={cn(
                         "relative flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 bg-background z-10",
                         {
                           "border-cyan-500 shadow-lg shadow-cyan-500/20": currentStep >= step.id,
-                          "border-muted": currentStep < step.id,
+                          "border-muted-foreground/50": currentStep < step.id,
                         }
                       )}
                     >
@@ -197,15 +200,15 @@ export default function NewSyncPage() {
 
                       {/* Active Step Glow */}
                       {currentStep === step.id && (
-                        <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-md animate-pulse" />
+                        <div className="absolute inset-0 bg-cyan-500/30 rounded-full blur-lg animate-pulse" />
                       )}
                     </div>
 
                     {/* Step Label */}
-                    <div className="mt-3 text-center max-w-[100px]">
+                    <div className="mt-3 text-center w-full">
                       <div
                         className={cn("text-xs font-medium transition-colors", {
-                          "text-foreground": currentStep >= step.id,
+                          "text-foreground font-semibold": currentStep >= step.id,
                           "text-muted-foreground": currentStep < step.id,
                         })}
                       >

@@ -24,7 +24,11 @@
       "Bash(test -f:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run)"
+      "Bash(npm run)",
+      "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync && grep:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)"
     ]
   }
 }

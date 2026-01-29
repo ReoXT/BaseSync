@@ -17,6 +17,9 @@ import {
   Table,
   Trash2,
   XCircle,
+  Activity,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -32,6 +35,7 @@ import { Alert, AlertDescription } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
+import { SyncHistory } from "../components/SyncHistory";
 
 interface SyncLog {
   id: string;
@@ -97,7 +101,6 @@ export default function SyncDetailPage() {
 
     try {
       await triggerManualSync({ syncConfigId: id });
-      // Refetch logs to show the new sync
       setTimeout(() => {
         refetchLogs();
         refetchConfig();
@@ -188,73 +191,29 @@ export default function SyncDetailPage() {
     }
   };
 
-  // Format sync status
-  const getSyncStatusBadge = (status: string) => {
-    switch (status) {
-      case "SUCCESS":
-        return (
-          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-            <CheckCircle2 className="h-4 w-4" />
-            <span className="text-sm font-medium">Success</span>
-          </div>
-        );
-      case "FAILED":
-        return (
-          <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
-            <XCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">Failed</span>
-          </div>
-        );
-      case "PARTIAL":
-        return (
-          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-medium">Partial</span>
-          </div>
-        );
-      case "RUNNING":
-        return (
-          <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm font-medium">Running</span>
-          </div>
-        );
-      case "PENDING":
-        return (
-          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm font-medium">Pending</span>
-          </div>
-        );
-      default:
-        return <span className="text-sm text-muted-foreground">{status}</span>;
-    }
-  };
-
   // Format date
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
     return d.toLocaleString();
   };
 
-  // Format duration
-  const formatDuration = (startedAt: Date | string, completedAt: Date | string | null) => {
-    if (!completedAt) return "In progress";
-    const start = new Date(startedAt).getTime();
-    const end = new Date(completedAt).getTime();
-    const seconds = Math.floor((end - start) / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
+  // Calculate sync stats
+  const syncStats = syncLogs?.reduce(
+    (acc: any, log: SyncLog) => {
+      if (log.status === "SUCCESS") acc.success++;
+      if (log.status === "FAILED") acc.failed++;
+      acc.totalRecords += log.recordsSynced;
+      return acc;
+    },
+    { success: 0, failed: 0, totalRecords: 0 }
+  ) || { success: 0, failed: 0, totalRecords: 0 };
 
   // Loading state
   if (isLoadingConfig) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
         </div>
       </div>
     );
@@ -281,325 +240,346 @@ export default function SyncDetailPage() {
   const mappedFieldsCount = Object.keys(syncConfig.fieldMappings || {}).length;
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">{syncConfig.name}</h1>
-            {syncConfig.isActive ? (
-              <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
-                Active
-              </span>
-            ) : (
-              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                Paused
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Created {formatDate(syncConfig.createdAt)}
-            {syncConfig.lastSyncAt && (
-              <> • Last synced {formatDate(syncConfig.lastSyncAt)}</>
-            )}
-          </p>
-        </div>
+    <div className="relative min-h-screen pb-20">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-orange-500/5 blur-3xl animate-pulse-slower" />
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSyncNow}
-            disabled={isSyncing || !syncConfig.isActive}
-          >
-            {isSyncing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sync Now
-              </>
-            )}
-          </Button>
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Header with gradient card */}
+        <Card className="border-cyan-500/20 bg-card/50 backdrop-blur-sm overflow-hidden animate-fade-in">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-orange-500/5" />
+          <CardHeader className="relative">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <h1 className="text-4xl font-bold text-gradient-sync">
+                    {syncConfig.name}
+                  </h1>
+                  {syncConfig.isActive ? (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/20 rounded-full">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Active</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-full">
+                      <div className="h-2 w-2 rounded-full bg-gray-400" />
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Paused</span>
+                    </div>
+                  )}
+                </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToggleActive}
-            disabled={isToggling}
-          >
-            {isToggling ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : syncConfig.isActive ? (
-              <>
-                <Pause className="h-4 w-4 mr-2" />
-                Pause
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Resume
-              </>
-            )}
-          </Button>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Created {formatDate(syncConfig.createdAt)}
+                  </div>
+                  {syncConfig.lastSyncAt && (
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      Last synced {formatDate(syncConfig.lastSyncAt)}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/sync/${id}/edit`)}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncNow}
+                  disabled={isSyncing || !syncConfig.isActive}
+                  className="border-cyan-500/20 hover:bg-cyan-500/5"
+                >
+                  {isSyncing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sync Now
+                    </>
+                  )}
+                </Button>
 
-          {!showDeleteConfirm ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleActive}
+                  disabled={isToggling}
+                >
+                  {isToggling ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : syncConfig.isActive ? (
+                    <>
+                      <Pause className="h-4 w-4 mr-2" />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Resume
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/sync/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+
+                {!showDeleteConfirm ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
                 ) : (
-                  "Confirm Delete"
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        "Confirm Delete"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Action Error */}
-      {actionError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Connection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Airtable Source */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Database className="h-4 w-4 text-orange-600" />
-              Airtable Source
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <p className="text-sm text-muted-foreground">Base</p>
-              <p className="font-medium">{syncConfig.airtableTableName || "Unknown Base"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Table ID</p>
-              <p className="text-sm font-mono text-muted-foreground">
-                {syncConfig.airtableTableId}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Google Sheets Destination */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Google Sheets Destination
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <p className="text-sm text-muted-foreground">Sheet</p>
-              <p className="font-medium">{syncConfig.googleSheetName || "Unknown Sheet"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Sheet ID</p>
-              <p className="text-sm font-mono text-muted-foreground">
-                {syncConfig.googleSheetId}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Sync Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Table className="h-4 w-4" />
-            Sync Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Sync Direction</p>
-              <div className="flex items-center gap-2">
-                {syncDirection.icon}
-                <span className="font-medium">{syncDirection.text}</span>
               </div>
             </div>
 
-            {syncConfig.syncDirection === "BIDIRECTIONAL" && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Conflict Resolution</p>
-                <p className="font-medium">
-                  {getConflictResolutionDisplay(syncConfig.conflictResolution)}
+            {/* Stats Cards */}
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="group relative rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent p-4 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-cyan-500/10 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Total Records</span>
+                </div>
+                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{syncStats.totalRecords.toLocaleString()}</p>
+              </div>
+
+              <div className="group relative rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent p-4 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Success Rate</span>
+                </div>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {syncStats.success + syncStats.failed > 0
+                    ? Math.round((syncStats.success / (syncStats.success + syncStats.failed)) * 100)
+                    : 0}%
                 </p>
               </div>
-            )}
 
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Field Mappings</p>
-              <p className="font-medium">{mappedFieldsCount} fields</p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Mapped Fields</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {Object.entries(syncConfig.fieldMappings || {}).map(([fieldId, columnIndex]) => (
-                <div
-                  key={fieldId}
-                  className="text-sm px-3 py-2 bg-muted rounded-md flex items-center justify-between"
-                >
-                  <span className="truncate">{fieldId}</span>
-                  <ArrowRight className="h-3 w-3 mx-2 flex-shrink-0" />
-                  <span className="font-mono text-muted-foreground">
-                    {String.fromCharCode(65 + ((columnIndex as number) % 26))}
-                  </span>
+              <div className="group relative rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent p-4 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Total Syncs</span>
                 </div>
-              ))}
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{syncLogs?.length || 0}</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+        </Card>
 
-      {/* Sync History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sync History</CardTitle>
-          <CardDescription>Recent sync executions and their results</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingLogs ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        {/* Action Error */}
+        {actionError && (
+          <Alert variant="destructive" className="animate-fade-in">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Connection Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+          {/* Airtable Source */}
+          <Card className="border-orange-500/20 bg-card/50 backdrop-blur-sm overflow-hidden group hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-md">
+                  <Database className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Airtable Source</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Origin Database</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="relative space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Base</p>
+                <p className="font-semibold">{syncConfig.airtableTableName || "Unknown Base"}</p>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Table ID</p>
+                <p className="text-sm font-mono text-muted-foreground bg-orange-50 dark:bg-orange-950/20 px-3 py-2 rounded border border-orange-200 dark:border-orange-500/20">
+                  {syncConfig.airtableTableId}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Google Sheets Destination */}
+          <Card className="border-green-500/20 bg-card/50 backdrop-blur-sm overflow-hidden group hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
+                  <FileSpreadsheet className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Google Sheets Target</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Destination Spreadsheet</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="relative space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Sheet</p>
+                <p className="font-semibold">{syncConfig.googleSheetName || "Unknown Sheet"}</p>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Sheet ID</p>
+                <p className="text-sm font-mono text-muted-foreground bg-green-50 dark:bg-green-950/20 px-3 py-2 rounded border border-green-200 dark:border-green-500/20">
+                  {syncConfig.googleSheetId}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sync Configuration */}
+        <Card className="border-cyan-500/20 bg-card/50 backdrop-blur-sm animate-fade-in-delayed">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-cyan-500/10 rounded-lg">
+                <Table className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div>
+                <CardTitle>Sync Configuration</CardTitle>
+                <CardDescription>Data flow settings and field mappings</CardDescription>
+              </div>
             </div>
-          ) : logsError ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {logsError instanceof Error ? logsError.message : "Failed to load sync logs"}
-              </AlertDescription>
-            </Alert>
-          ) : !syncLogs || syncLogs.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">No sync history yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Sync logs will appear here after the first sync runs
-              </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Sync Direction</p>
+                <div className="flex items-center gap-3 bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-500/20 rounded-lg p-3">
+                  <div className="text-cyan-600 dark:text-cyan-400">
+                    {syncDirection.icon}
+                  </div>
+                  <span className="font-medium">{syncDirection.text}</span>
+                </div>
+              </div>
+
+              {syncConfig.syncDirection === "BIDIRECTIONAL" && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Conflict Resolution</p>
+                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3">
+                    <p className="font-medium">
+                      {getConflictResolutionDisplay(syncConfig.conflictResolution)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Field Mappings</p>
+                <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-500/20 rounded-lg p-3">
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{mappedFieldsCount}</p>
+                  <p className="text-xs text-muted-foreground">fields mapped</p>
+                </div>
+              </div>
             </div>
-          ) : (
+
+            <Separator />
+
             <div className="space-y-3">
-              {syncLogs.map((log: SyncLog) => (
-                <div
-                  key={log.id}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="space-y-1">
-                      {getSyncStatusBadge(log.status)}
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(log.startedAt)}
-                      </p>
-                    </div>
-                    <div className="text-right text-sm">
-                      <p className="text-muted-foreground">
-                        Duration: {formatDuration(log.startedAt, log.completedAt)}
-                      </p>
+              <p className="text-sm text-muted-foreground">Mapped Fields</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                {Object.entries(syncConfig.fieldMappings || {}).map(([fieldId, columnIndex]) => (
+                  <div
+                    key={fieldId}
+                    className="group flex items-center justify-between bg-muted/50 hover:bg-muted border border-border/50 hover:border-cyan-500/20 rounded-lg p-3 transition-all duration-200"
+                  >
+                    <span className="text-sm truncate">{fieldId}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:text-cyan-500 transition-colors" />
+                      <span className="font-mono text-sm font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/20 px-2 py-1 rounded border border-cyan-200 dark:border-cyan-500/20">
+                        {String.fromCharCode(65 + ((columnIndex as number) % 26))}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Sync Statistics */}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Synced</p>
-                      <p className="font-medium text-green-600">{log.recordsSynced}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Failed</p>
-                      <p className="font-medium text-red-600">{log.recordsFailed}</p>
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {log.errors && (() => {
-                    try {
-                      const parsedErrors = JSON.parse(log.errors);
-                      if (!Array.isArray(parsedErrors) || parsedErrors.length === 0) {
-                        return null;
-                      }
-                      return (
-                        <Alert variant="destructive" className="mt-3">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            <p className="font-medium">Errors:</p>
-                            <details className="mt-2">
-                              <summary className="cursor-pointer text-xs">
-                                View error details
-                              </summary>
-                              <pre className="text-xs mt-2 overflow-auto">
-                                {JSON.stringify(parsedErrors, null, 2)}
-                              </pre>
-                            </details>
-                          </AlertDescription>
-                        </Alert>
-                      );
-                    } catch {
-                      return null;
-                    }
-                  })()}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Back Button */}
-      <div className="flex justify-start">
-        <Button variant="outline" onClick={() => navigate("/dashboard")}>
-          Back to Dashboard
-        </Button>
+        {/* Sync History */}
+        <div className="animate-fade-in-delayed-more">
+          <SyncHistory
+            syncLogs={syncLogs || []}
+            isLoading={isLoadingLogs}
+            limit={50}
+          />
+        </div>
+
+        {/* Back Button */}
+        <div className="flex justify-start animate-fade-in-delayed-more">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard")}
+            className="border-cyan-500/20 hover:bg-cyan-500/5"
+          >
+            ← Back to Dashboard
+          </Button>
+        </div>
       </div>
     </div>
   );

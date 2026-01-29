@@ -162,85 +162,117 @@ export function ReviewStep({ formData }: ReviewStepProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Review Your Sync Configuration</h3>
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
+          <h3 className="text-lg font-bold text-foreground">Review Your Configuration</h3>
+        </div>
         <p className="text-sm text-muted-foreground">
-          Please review all settings before creating your sync. You can go back to edit any step.
+          Verify all settings before creating your sync. You can go back to edit any step.
         </p>
       </div>
 
       {/* Sync Name Card */}
-      <Card>
-        <CardHeader>
+      <Card className="relative border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden group animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <CardHeader className="relative">
           <CardTitle className="text-base flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Sync Name
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+              <Settings className="h-4 w-4 text-cyan-400" />
+            </div>
+            <span>Sync Name</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="font-medium">{formData.syncName || "Not configured"}</p>
+        <CardContent className="relative">
+          <p className="font-semibold text-foreground text-lg">{formData.syncName || "Not configured"}</p>
         </CardContent>
       </Card>
 
       {/* Source & Destination Card */}
-      <Card>
-        <CardHeader>
+      <Card className="relative border-emerald-500/20 bg-card/80 backdrop-blur-sm overflow-hidden group animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <CardHeader className="relative">
           <CardTitle className="text-base flex items-center gap-2">
-            <Layers className="h-4 w-4" />
-            Data Sources
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/10 to-emerald-500/10 flex items-center justify-center">
+              <Layers className="h-4 w-4 text-cyan-400" />
+            </div>
+            <span>Data Sources</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative">
           {/* Airtable */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Database className="h-4 w-4 text-orange-600" />
-              <span className="text-sm font-medium text-muted-foreground">Airtable</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                <Database className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Airtable</span>
             </div>
-            <div className="pl-6">
-              <p className="font-medium">
-                {formData.airtableBaseName || "Unknown Base"}
-                <ArrowRight className="inline-block h-4 w-4 mx-2 text-muted-foreground" />
-                {formData.airtableTableName || "Unknown Table"}
-              </p>
+            <div className="pl-8">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 font-medium text-sm">
+                  {formData.airtableBaseName || "Unknown Base"}
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 font-medium text-sm">
+                  {formData.airtableTableName || "Unknown Table"}
+                </span>
+              </div>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-border/50" />
 
           {/* Google Sheets */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-muted-foreground">Google Sheets</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
+                <FileSpreadsheet className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Google Sheets</span>
             </div>
-            <div className="pl-6">
-              <p className="font-medium">
-                {formData.googleSpreadsheetName || "Unknown Spreadsheet"}
-                <ArrowRight className="inline-block h-4 w-4 mx-2 text-muted-foreground" />
-                {formData.googleSheetName || "Unknown Sheet"}
-              </p>
+            <div className="pl-8">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 font-medium text-sm">
+                  {formData.googleSpreadsheetName || "Unknown Spreadsheet"}
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 font-medium text-sm">
+                  {formData.googleSheetName || "Unknown Sheet"}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Field Mappings Card */}
-      <Card>
-        <CardHeader>
+      <Card className="relative border-purple-500/20 bg-card/80 backdrop-blur-sm overflow-hidden group animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <CardHeader className="relative">
           <CardTitle className="text-base flex items-center gap-2">
-            <Table className="h-4 w-4" />
-            Field Mappings
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Table className="h-4 w-4 text-purple-400" />
+            </div>
+            <span>Field Mappings</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <p className="font-medium">
-              {mappedFieldCount} field{mappedFieldCount !== 1 ? "s" : ""} mapped
-            </p>
+        <CardContent className="relative">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative">
+              <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md" />
+            </div>
+            <div>
+              <p className="font-bold text-2xl text-foreground">
+                {mappedFieldCount}
+              </p>
+              <p className="text-xs text-muted-foreground font-mono">
+                field{mappedFieldCount !== 1 ? "s" : ""} configured
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-muted-foreground px-3 py-2 rounded-lg bg-purple-500/5 border border-purple-500/10">
             {mappedFieldCount === 0
               ? "No fields mapped"
               : `${mappedFieldCount} Airtable field${
@@ -251,21 +283,26 @@ export function ReviewStep({ formData }: ReviewStepProps) {
       </Card>
 
       {/* Sync Configuration Card */}
-      <Card>
-        <CardHeader>
+      <Card className="relative border-blue-500/20 bg-card/80 backdrop-blur-sm overflow-hidden group animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <CardHeader className="relative">
           <CardTitle className="text-base flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Sync Settings
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-blue-400" />
+            </div>
+            <span>Sync Settings</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative">
           {/* Sync Direction */}
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-2">Sync Direction</p>
-            <div className="flex items-center gap-2">
-              {syncDirection.icon}
+            <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Sync Direction</p>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-br from-cyan-500/5 to-blue-500/5 border border-cyan-500/20">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                {syncDirection.icon}
+              </div>
               <div>
-                <p className="font-medium">{syncDirection.text}</p>
+                <p className="font-semibold text-foreground">{syncDirection.text}</p>
                 <p className="text-sm text-muted-foreground">{syncDirection.description}</p>
               </div>
             </div>
@@ -274,29 +311,39 @@ export function ReviewStep({ formData }: ReviewStepProps) {
           {/* Conflict Resolution (if bidirectional) */}
           {formData.syncDirection === "BIDIRECTIONAL" && (
             <>
-              <Separator />
+              <Separator className="bg-border/50" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
                   Conflict Resolution
                 </p>
-                <p className="font-medium">{getConflictResolutionDisplay()}</p>
+                <div className="px-4 py-3 rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5 border border-purple-500/20">
+                  <p className="font-semibold text-foreground">{getConflictResolutionDisplay()}</p>
+                </div>
               </div>
             </>
           )}
 
-          <Separator />
+          <Separator className="bg-border/50" />
 
           {/* Sync Frequency */}
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-2">Sync Frequency</p>
-            <p className="font-medium">Every 5 minutes (automatic)</p>
+            <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Sync Frequency</p>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-br from-emerald-500/5 to-green-500/5 border border-emerald-500/20">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Every 5 minutes</p>
+                <p className="text-sm text-muted-foreground">Automatic background sync</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Error Display */}
       {createError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-red-500/50 bg-red-500/5 animate-fade-in">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{createError}</AlertDescription>
         </Alert>
@@ -304,11 +351,10 @@ export function ReviewStep({ formData }: ReviewStepProps) {
 
       {/* Success Indicator */}
       {!createError && mappedFieldCount > 0 && formData.syncDirection && (
-        <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <AlertDescription className="text-green-900 dark:text-green-100">
-            <strong>Configuration looks good!</strong> Click "Create Sync" to start syncing your
-            data.
+        <Alert className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-green-500/5 animate-fade-in">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          <AlertDescription className="text-foreground">
+            <strong className="text-emerald-400">Configuration looks good!</strong> Click "Create Sync" to start syncing your data.
           </AlertDescription>
         </Alert>
       )}
@@ -319,9 +365,9 @@ export function ReviewStep({ formData }: ReviewStepProps) {
         !formData.googleSheetId ||
         mappedFieldCount === 0 ||
         !formData.syncDirection) && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+        <Alert className="border-yellow-500/50 bg-yellow-500/5">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-600 dark:text-yellow-400">
             Please complete all previous steps before creating the sync configuration.
           </AlertDescription>
         </Alert>
@@ -333,7 +379,9 @@ export function ReviewStep({ formData }: ReviewStepProps) {
           variant="outline"
           onClick={() => window.history.back()}
           disabled={isCreating}
+          className="border-cyan-500/30 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all duration-300"
         >
+          <ArrowLeftRight className="mr-2 h-4 w-4 rotate-180" />
           Back to Edit
         </Button>
 
@@ -348,16 +396,17 @@ export function ReviewStep({ formData }: ReviewStepProps) {
             !formData.syncDirection
           }
           size="lg"
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
         >
           {isCreating ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating Sync...
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="font-mono">Creating Sync...</span>
             </>
           ) : (
             <>
-              <Check className="mr-2 h-4 w-4" />
-              Create Sync
+              <Check className="mr-2 h-5 w-5" />
+              <span className="font-semibold">Create Sync</span>
             </>
           )}
         </Button>
@@ -365,14 +414,23 @@ export function ReviewStep({ formData }: ReviewStepProps) {
 
       {/* Info about what happens next */}
       {!isCreating && (
-        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-          <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-blue-900 dark:text-blue-100">
-            <p className="font-medium mb-1">What happens next?</p>
-            <ul className="text-sm space-y-1 list-disc list-inside">
-              <li>Initial bulk sync will run to transfer existing data</li>
-              <li>Automatic sync will run every 5 minutes to keep data in sync</li>
-              <li>You can manually trigger syncs anytime from the dashboard</li>
+        <Alert className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/5">
+          <Zap className="h-4 w-4 text-blue-400" />
+          <AlertDescription className="text-foreground">
+            <p className="font-semibold text-blue-400 mb-2">⚡ What happens next?</p>
+            <ul className="text-sm space-y-1.5 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Initial bulk sync will run to transfer existing data</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Automatic sync will run every 5 minutes to keep data in sync</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>You can manually trigger syncs anytime from the dashboard</span>
+              </li>
             </ul>
           </AlertDescription>
         </Alert>

@@ -333,46 +333,74 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
 
   const mappedCount = Object.keys(fieldMappings).length;
   const totalFields = airtableFields.length;
+  const mappingProgress = totalFields > 0 ? (mappedCount / totalFields) * 100 : 0;
 
   return (
     <div className="space-y-6">
       {/* Header with stats and actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Map Fields to Columns</h3>
-          <p className="text-sm text-muted-foreground">
-            {mappedCount} of {totalFields} fields mapped
-          </p>
+      <div className="relative rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5 p-6 overflow-hidden animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-50" />
+
+        <div className="relative flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-1">
+              <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-emerald-500 rounded-full" />
+              Field Mapping
+            </h3>
+            <p className="text-sm font-mono text-muted-foreground">
+              {mappedCount} of {totalFields} fields configured
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={autoMapAll}
+              disabled={totalFields === 0}
+              className="border-cyan-500/30 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-300"
+            >
+              <Zap className="h-4 w-4 mr-2 text-cyan-400" />
+              Auto-Map
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllMappings}
+              disabled={mappedCount === 0}
+              className="hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={autoMapAll} disabled={totalFields === 0}>
-            <Zap className="h-4 w-4 mr-2" />
-            Auto-Map
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearAllMappings}
-            disabled={mappedCount === 0}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear All
-          </Button>
+
+        {/* Progress Bar */}
+        <div className="relative h-2 rounded-full bg-muted/50 overflow-hidden">
+          <div
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-500 rounded-full"
+            style={{ width: `${mappingProgress}%` }}
+          />
+          {mappingProgress > 0 && (
+            <div
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400/50 to-emerald-400/50 blur-sm"
+              style={{ width: `${mappingProgress}%` }}
+            />
+          )}
         </div>
       </div>
 
       {/* Info card about linked records */}
-      <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-        <AlertDescription className="text-blue-900 dark:text-blue-100">
-          <strong>Smart Linked Records:</strong> Linked record fields will automatically sync using
-          record names instead of cryptic IDs. This is a key advantage over other sync tools!
+      <Alert className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-purple-500/5 animate-fade-in">
+        <Info className="h-4 w-4 text-blue-400" />
+        <AlertDescription className="text-foreground">
+          <strong className="text-blue-400">⚡ Smart Linked Records:</strong> Linked record fields will automatically sync using record names instead of cryptic IDs. This is a key advantage over other sync tools!
         </AlertDescription>
       </Alert>
 
       {/* Mapping interface */}
       <div className="space-y-3">
-        {airtableFields.map((field) => {
+        {airtableFields.map((field, index) => {
           const isMapped = field.id in fieldMappings;
           const mappedColumnIndex = fieldMappings[field.id];
           const compatibility = checkTypeCompatibility(field.type);
@@ -380,48 +408,66 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
           return (
             <Card
               key={field.id}
-              className={isMapped ? "border-primary/50" : "border-muted"}
+              className={`relative group transition-all duration-300 overflow-hidden ${
+                isMapped
+                  ? "border-cyan-500/40 bg-gradient-to-br from-cyan-500/5 to-emerald-500/5 shadow-lg shadow-cyan-500/5"
+                  : "border-border/50 hover:border-border"
+              }`}
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <CardContent className="p-4">
+              {/* Glow effect for mapped fields */}
+              {isMapped && (
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              )}
+
+              <CardContent className="p-4 relative">
                 <div className="flex items-start gap-4">
                   {/* Left: Airtable field info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium truncate">{field.name}</h4>
-                      <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h4 className="font-semibold text-foreground">{field.name}</h4>
+                      <span className="text-xs px-2 py-1 bg-gradient-to-br from-orange-500 to-red-500 text-white rounded font-mono">
                         {formatFieldType(field.type)}
                       </span>
                       {field.type === "multipleRecordLinks" && (
-                        <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/30 flex items-center gap-1">
+                          <Link2 className="h-3 w-3 text-blue-400" />
+                          <span className="text-xs font-mono text-blue-400">LINKED</span>
+                        </div>
                       )}
                     </div>
                     {field.description && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground mb-2">
                         {field.description}
                       </p>
                     )}
                     {/* Type compatibility info/warning */}
                     {compatibility.info && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                        <span>{compatibility.info}</span>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-fit">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-400 flex-shrink-0" />
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400">{compatibility.info}</span>
                       </div>
                     )}
                     {compatibility.warning && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3" />
-                        <span>{compatibility.warning}</span>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 w-fit">
+                        <AlertTriangle className="h-3 w-3 text-amber-400 flex-shrink-0" />
+                        <span className="text-xs text-amber-600 dark:text-amber-400">{compatibility.warning}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Middle: Arrow indicator */}
-                  <div className="flex items-center justify-center pt-1">
-                    <ArrowRight
-                      className={`h-5 w-5 ${
-                        isMapped ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    />
+                  <div className="flex items-center justify-center pt-1 flex-shrink-0">
+                    <div className={`relative ${isMapped ? 'animate-pulse' : ''}`}>
+                      <ArrowRight
+                        className={`h-6 w-6 transition-all duration-300 ${
+                          isMapped ? "text-cyan-400" : "text-muted-foreground"
+                        }`}
+                      />
+                      {isMapped && (
+                        <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-md" />
+                      )}
+                    </div>
                   </div>
 
                   {/* Right: Google Sheets column selector */}
@@ -436,34 +482,41 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
                         }
                       }}
                     >
-                      <SelectTrigger className={isMapped ? "border-primary" : ""}>
-                        <SelectValue placeholder="Select column or skip" />
+                      <SelectTrigger className={`transition-all duration-300 ${
+                        isMapped
+                          ? "border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10"
+                          : "border-border hover:border-border/80"
+                      }`}>
+                        <SelectValue placeholder="Select column..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
+                      <SelectContent className="backdrop-blur-xl bg-card/95">
+                        <SelectItem value="none" className="text-muted-foreground">
                           <div className="flex items-center gap-2">
-                            <X className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Don't sync this field</span>
+                            <X className="h-4 w-4" />
+                            <span>Skip this field</span>
                           </div>
                         </SelectItem>
                         <Separator className="my-1" />
                         {sheetHeaders.map((header, index) => (
-                          <SelectItem key={index} value={index.toString()}>
+                          <SelectItem key={index} value={index.toString()} className="cursor-pointer">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground font-mono">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                                 {String.fromCharCode(65 + (index % 26))}
                                 {index >= 26 ? String.fromCharCode(65 + Math.floor(index / 26) - 1) : ""}
                               </span>
-                              <span>{header || `Column ${index + 1}`}</span>
+                              <span className="font-medium">{header || `Column ${index + 1}`}</span>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {isMapped && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Mapped to: {sheetHeaders[mappedColumnIndex] || `Column ${mappedColumnIndex + 1}`}
-                      </p>
+                      <div className="flex items-center gap-2 mt-2 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-fit">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                        <span className="text-xs font-mono text-foreground">
+                          {sheetHeaders[mappedColumnIndex] || `Column ${mappedColumnIndex + 1}`}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -475,9 +528,9 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
 
       {/* Empty state */}
       {airtableFields.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+        <Alert className="border-yellow-500/50 bg-yellow-500/5">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-600 dark:text-yellow-400">
             No fields found in the selected Airtable table.
           </AlertDescription>
         </Alert>
@@ -485,11 +538,10 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
 
       {/* Summary */}
       {mappedCount > 0 && (
-        <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <AlertDescription className="text-green-900 dark:text-green-100">
-            <strong>Ready to sync!</strong> {mappedCount} field{mappedCount !== 1 ? "s" : ""} will
-            be synced between Airtable and Google Sheets.
+        <Alert className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-green-500/5 animate-fade-in">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          <AlertDescription className="text-foreground">
+            <strong className="text-emerald-400">Ready to sync!</strong> {mappedCount} field{mappedCount !== 1 ? "s" : ""} will be synced between Airtable and Google Sheets.
           </AlertDescription>
         </Alert>
       )}
