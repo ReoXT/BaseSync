@@ -149,14 +149,14 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground">
+    <div className="relative min-h-screen w-full bg-background text-foreground">
       {/* Animated Grid Background - Matching Hero */}
       <AnimatedGridBackground />
 
       {/* Main Content */}
       <section
         ref={sectionRef}
-        className="relative z-10 py-20 md:py-32 px-6 lg:px-8"
+        className="relative pt-12 pb-20 md:pt-16 md:pb-32 px-6 lg:px-8"
       >
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
@@ -165,26 +165,6 @@ export default function PricingPage() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
-            {/* Back Navigation */}
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-400 transition-colors duration-300 mb-8 group"
-            >
-              <svg
-                className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Back
-            </button>
 
             {/* Badge - Matching Hero Style */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-6">
@@ -262,7 +242,7 @@ export default function PricingPage() {
           )}
 
           {/* Pricing Cards Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16 items-center">
             {tiers.map((tier, index) => (
               <PricingCard
                 key={tier.id}
@@ -284,7 +264,7 @@ export default function PricingPage() {
           <TrustSignals isVisible={isVisible} />
 
           {/* FAQ Teaser */}
-          <FAQTeaser isVisible={isVisible} navigate={navigate} />
+          <FAQTeaser isVisible={isVisible} />
         </div>
       </section>
     </div>
@@ -436,30 +416,30 @@ function PricingCard({
     <div
       className={`relative transition-all duration-700 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      } ${tier.popular ? "md:scale-105 lg:scale-110 pt-6" : ""}`}
       style={{
         transitionDelay: isVisible ? `${delay}s` : "0s",
       }}
     >
-      {/* Popular Badge */}
-      {tier.badge && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30">
-            <span className="text-xs font-bold font-mono text-white tracking-wider">
-              {tier.badge}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Card - Glassmorphic Style */}
+      {/* Card - Glassmorphic Style (with badge inside) */}
       <div
-        className={`relative h-full rounded-2xl border backdrop-blur-sm overflow-hidden transition-all duration-300 hover:scale-[1.02] group ${
+        className={`relative h-full rounded-2xl border backdrop-blur-sm overflow-visible transition-all duration-300 hover:scale-[1.02] group ${
           tier.popular
-            ? "border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 shadow-lg shadow-cyan-500/10"
+            ? "border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 shadow-xl shadow-cyan-500/20"
             : "border-border bg-card/50 hover:border-cyan-500/20"
         }`}
       >
+        {/* Popular Badge - Now inside the card */}
+        {tier.badge && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+            <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30">
+              <span className="text-xs font-bold font-mono text-white tracking-wider">
+                {tier.badge}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Hover Glow Effect */}
         {tier.popular && (
           <div
@@ -734,10 +714,8 @@ function TrustSignals({ isVisible }: { isVisible: boolean }) {
 // FAQ Teaser Section
 function FAQTeaser({
   isVisible,
-  navigate,
 }: {
   isVisible: boolean;
-  navigate: (path: string) => void;
 }) {
   const faqs = [
     {
@@ -789,8 +767,8 @@ function FAQTeaser({
 
       {/* View All FAQs Link */}
       <div className="text-center mt-8">
-        <button
-          onClick={() => navigate("/")}
+        <a
+          href="/#faq"
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors duration-300 group"
         >
           <span className="text-sm font-semibold">View all FAQs</span>
@@ -807,7 +785,7 @@ function FAQTeaser({
               d="M9 5l7 7-7 7"
             />
           </svg>
-        </button>
+        </a>
       </div>
     </div>
   );

@@ -44,7 +44,7 @@ export default function FAQ({ faqs }: { faqs: FAQ[] }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-24 md:py-32 overflow-hidden">
+    <section id="faq" ref={sectionRef} className="relative py-24 md:py-32 overflow-hidden">
       {/* Background Pattern - Matching Other Sections */}
       <div className="absolute inset-0 -z-10">
         <div
