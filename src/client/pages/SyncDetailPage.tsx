@@ -241,22 +241,6 @@ export default function SyncDetailPage() {
 
   return (
     <div className="relative min-h-screen pb-20">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 -z-10">
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, currentColor 1px, transparent 1px),
-              linear-gradient(to bottom, currentColor 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-orange-500/5 blur-3xl animate-pulse-slower" />
-      </div>
-
       <div className="container mx-auto py-8 space-y-6">
         {/* Header with gradient card */}
         <Card className="border-cyan-500/20 bg-card/50 backdrop-blur-sm overflow-hidden animate-fade-in">

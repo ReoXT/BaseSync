@@ -6,7 +6,7 @@ app BaseSync {
   title: "BaseSync",
 
   head: [
-    "<link rel='icon' href='/favicon.ico' />",
+    "<link rel='icon' type='image/svg+xml' href='/favicon.svg' />",
     "<meta charset='utf-8' />",
     "<meta name='description' content='Seamlessly sync data between Airtable and Google Sheets with BaseSync.' />",
     "<meta name='author' content='BaseSync' />",
@@ -72,11 +72,8 @@ app BaseSync {
   },
 
   db: {
-    // Run `wasp db seed` to seed the database with the seed functions below:
-    seeds: [
-      // Populates the database with a bunch of fake users to work with during development.
-      import { seedMockUsers } from "@src/server/scripts/dbSeeds",
-    ]
+    // Database seeding disabled for production
+    seeds: []
   },
 
   client: {

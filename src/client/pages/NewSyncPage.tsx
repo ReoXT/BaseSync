@@ -9,6 +9,7 @@ import { GoogleSheetsSelector } from "../components/wizard/GoogleSheetsSelector"
 import { FieldMapper } from "../components/wizard/FieldMapper";
 import { SyncOptions } from "../components/wizard/SyncOptions";
 import { ReviewStep } from "../components/wizard/ReviewStep";
+import { ProgressStepper } from "../components/wizard/ProgressStepper";
 
 // Wizard step configuration
 const STEPS = [
@@ -102,30 +103,37 @@ export default function NewSyncPage() {
 
   return (
     <div className="relative min-h-screen pb-20 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 -z-10">
+      {/* Grid Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <div
-          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
           style={{
             backgroundImage: `
               linear-gradient(to right, currentColor 1px, transparent 1px),
               linear-gradient(to bottom, currentColor 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
+            maskImage: `
+              radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+            `,
+            WebkitMaskImage: `
+              radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+            `,
           }}
         />
+
         {/* Gradient Orbs */}
         <div
-          className="absolute top-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+          className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
           aria-hidden="true"
         />
         <div
-          className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+          className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
           aria-hidden="true"
         />
       </div>
 
-      <div className="py-10 lg:mt-10">
+      <div className="relative z-10 py-10 lg:mt-10">
         <div className="mx-auto max-w-5xl px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8 animate-fade-in">
@@ -152,74 +160,8 @@ export default function NewSyncPage() {
             </p>
           </div>
 
-          {/* Progress Indicator */}
-          <div className="mb-8 animate-fade-in-delayed">
-            <div className="relative px-5">
-              {/* Progress Bar Background */}
-              <div className="absolute top-5 left-5 right-5 h-0.5 bg-muted/50" />
-
-              {/* Active Progress Bar */}
-              <div
-                className="absolute top-5 left-5 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                style={{
-                  width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% * (100% - 40px) / 100 + 20px)`,
-                }}
-              >
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-400 blur-sm opacity-50" />
-              </div>
-
-              <div className="flex items-start justify-between">
-                {STEPS.map((step, index) => (
-                  <div key={step.id} className="flex flex-col items-center" style={{ width: '80px' }}>
-                    {/* Step Circle */}
-                    <div
-                      className={cn(
-                        "relative flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 bg-background z-10",
-                        {
-                          "border-cyan-500 shadow-lg shadow-cyan-500/20": currentStep >= step.id,
-                          "border-muted-foreground/50": currentStep < step.id,
-                        }
-                      )}
-                    >
-                      {currentStep > step.id ? (
-                        <>
-                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full" />
-                          <Check className="h-5 w-5 text-white relative z-10" />
-                        </>
-                      ) : (
-                        <span
-                          className={cn("text-sm font-bold font-mono", {
-                            "text-gradient-sync": currentStep === step.id,
-                            "text-muted-foreground": currentStep < step.id,
-                          })}
-                        >
-                          {step.id}
-                        </span>
-                      )}
-
-                      {/* Active Step Glow */}
-                      {currentStep === step.id && (
-                        <div className="absolute inset-0 bg-cyan-500/30 rounded-full blur-lg animate-pulse" />
-                      )}
-                    </div>
-
-                    {/* Step Label */}
-                    <div className="mt-3 text-center w-full">
-                      <div
-                        className={cn("text-xs font-medium transition-colors", {
-                          "text-foreground font-semibold": currentStep >= step.id,
-                          "text-muted-foreground": currentStep < step.id,
-                        })}
-                      >
-                        {step.title}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* Progress Stepper */}
+          <ProgressStepper steps={STEPS} currentStep={currentStep} />
 
           {/* Step Content */}
           <Card className="mb-6 border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden animate-fade-in-delayed-more">

@@ -3,7 +3,7 @@ import { Button } from "../../client/components/ui/button";
 
 export default function Hero() {
   return (
-    <div className="relative w-full pt-14 pb-20 overflow-hidden">
+    <div className="relative w-full pt-0 pb-20 overflow-hidden">
       <AnimatedBackground />
       <div className="md:p-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -57,7 +57,7 @@ export default function Hero() {
             </p>
 
             {/* CTAs */}
-            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-delayed-more">
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-delayed-more">
               <Button
                 size="lg"
                 className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-6 text-lg shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105"
@@ -93,7 +93,7 @@ export default function Hero() {
 // Hero Visual - Animated Sync Visualization
 function HeroVisual() {
   return (
-    <div className="mt-20 relative z-10 animate-fade-in-delayed-more">
+    <div className="mt-6 md:mt-8 relative z-10 animate-fade-in-delayed-more">
       <div className="max-w-5xl mx-auto px-4">
         {/* Main Container */}
         <div className="relative">
@@ -387,6 +387,12 @@ function AnimatedBackground() {
             linear-gradient(to bottom, currentColor 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px',
+          maskImage: `
+            radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+          `,
+          WebkitMaskImage: `
+            radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+          `,
         }}
       />
 

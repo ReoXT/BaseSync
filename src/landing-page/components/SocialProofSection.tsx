@@ -31,7 +31,7 @@ export default function SocialProofSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-24 md:py-32 overflow-hidden">
+    <section ref={sectionRef} className="relative pt-8 pb-24 md:pt-12 md:pb-32 overflow-hidden">
       {/* Background Pattern - Matching Other Sections */}
       <div className="absolute inset-0 -z-10">
         <div

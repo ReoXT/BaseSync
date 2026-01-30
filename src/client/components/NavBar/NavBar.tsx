@@ -14,7 +14,7 @@ import { throttleWithTrailingInvocation } from "../../../shared/utils";
 import { UserDropdown } from "../../../user/UserDropdown";
 import { UserMenuItems } from "../../../user/UserMenuItems";
 import { useIsLandingPage } from "../../hooks/useIsLandingPage";
-import logo from "../../static/logo.webp";
+import logo from "../../static/logo.svg";
 import { cn } from "../../utils";
 import DarkModeSwitcher from "../DarkModeSwitcher";
 import { Announcement } from "./Announcement";
@@ -47,7 +47,8 @@ export default function NavBar({
 
   return (
     <>
-      {isLandingPage && <Announcement />}
+      {/* OpenSaaS Template - Support Open Source Banner - Commented out for BaseSync */}
+      {/* {isLandingPage && <Announcement />} */}
       <header
         className={cn(
           "sticky top-0 z-50 transition-all duration-300",

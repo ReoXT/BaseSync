@@ -149,14 +149,14 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-background text-foreground">
-      {/* Animated Grid Background - Matching Hero */}
+    <div className="relative min-h-screen w-full bg-background text-foreground overflow-hidden">
+      {/* Animated Grid Background - Matching Landing Page */}
       <AnimatedGridBackground />
 
       {/* Main Content */}
       <section
         ref={sectionRef}
-        className="relative pt-12 pb-20 md:pt-16 md:pb-32 px-6 lg:px-8"
+        className="relative z-10 pt-12 pb-20 md:pt-16 md:pb-32 px-6 lg:px-8"
       >
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
@@ -267,39 +267,6 @@ export default function PricingPage() {
           <FAQTeaser isVisible={isVisible} />
         </div>
       </section>
-    </div>
-  );
-}
-
-// Animated Grid Background Component
-function AnimatedGridBackground() {
-  return (
-    <div className="absolute inset-0 -z-10 overflow-hidden">
-      {/* Grid Pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, currentColor 1px, transparent 1px),
-            linear-gradient(to bottom, currentColor 1px, transparent 1px)
-          `,
-          backgroundSize: "40px 40px",
-        }}
-      />
-
-      {/* Gradient Orbs - Multiple for depth */}
-      <div
-        className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl animate-pulse-slow"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl animate-pulse-slower"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
-        aria-hidden="true"
-      />
     </div>
   );
 }
@@ -787,6 +754,41 @@ function FAQTeaser({
           </svg>
         </a>
       </div>
+    </div>
+  );
+}
+
+// Animated Grid Background - Matching Landing Page Hero
+function AnimatedGridBackground() {
+  return (
+    <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* Grid Pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, currentColor 1px, transparent 1px),
+            linear-gradient(to bottom, currentColor 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px',
+          maskImage: `
+            radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+          `,
+          WebkitMaskImage: `
+            radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
+          `,
+        }}
+      />
+
+      {/* Gradient Orbs */}
+      <div
+        className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+        aria-hidden="true"
+      />
     </div>
   );
 }

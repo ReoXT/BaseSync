@@ -26,6 +26,16 @@ model User {
   trialStartedAt            DateTime        @default(now())  // When user started trial (same as createdAt for new users)
   trialEndsAt               DateTime?       // Calculated: trialStartedAt + 14 days (set on creation)
 
+  // Email change verification
+  pendingEmail              String?         // New email awaiting verification
+  emailChangeToken          String?         @unique  // Token for verifying new email
+  emailChangeTokenExpiry    DateTime?       // Token expiration time
+
+  // Notification preferences
+  emailNotifications        Boolean         @default(true)   // Receive email notifications
+  syncFailureAlerts         Boolean         @default(true)   // Alert on sync failures
+  weeklyDigest              Boolean         @default(false)  // Weekly sync summary
+
   gptResponses              GptResponse[]
   contactFormMessages       ContactFormMessage[]
   tasks                     Task[]

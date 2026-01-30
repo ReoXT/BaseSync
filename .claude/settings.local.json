@@ -28,7 +28,11 @@
       "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync && grep:*)",
       "Bash(npm run dev:*)",
       "Bash(pkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(ls:*)",
+      "Bash(gtimeout 60 wasp start:*)"
     ]
   }
 }

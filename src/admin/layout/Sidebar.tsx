@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import Logo from "../../client/static/logo.webp";
+import Logo from "../../client/static/logo.svg";
 import { cn } from "../../client/utils";
 
 interface SidebarProps {
