@@ -88,11 +88,7 @@ export default function PricingPage() {
     !!user.subscriptionStatus &&
     user.subscriptionStatus !== SubscriptionStatus.Deleted;
 
-  const {
-    data: customerPortalUrl,
-    isLoading: isCustomerPortalUrlLoading,
-    error: customerPortalUrlError,
-  } = useQuery(getCustomerPortalUrl, { enabled: isUserSubscribed });
+  // Removed pre-fetching of customer portal URL - now fetched on-demand with return URL
 
   const navigate = useNavigate();
 
@@ -102,7 +98,10 @@ export default function PricingPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  async function handleBuyNowClick(paymentPlanId: PaymentPlanId) {
+  async function handleBuyNowClick(
+    basePlanId: PaymentPlanId,
+    currentBillingPeriod: BillingPeriod
+  ) {
     if (!user) {
       navigate("/login");
       return;
@@ -111,7 +110,14 @@ export default function PricingPage() {
       setIsPaymentLoading(true);
       setErrorMessage(null);
 
-      const checkoutResults = await generateCheckoutSession(paymentPlanId);
+      // Map base plan ID to correct plan ID based on billing period
+      const planId = getPlanIdForBillingPeriod(basePlanId, currentBillingPeriod);
+
+      // Pass current page URL as return URL
+      const checkoutResults = await generateCheckoutSession({
+        paymentPlanId: planId,
+        returnUrl: window.location.pathname,
+      });
 
       if (checkoutResults?.sessionUrl) {
         window.open(checkoutResults.sessionUrl, "_self");
@@ -129,23 +135,57 @@ export default function PricingPage() {
     }
   }
 
-  const handleCustomerPortalClick = () => {
+  // Helper function to get the correct plan ID based on billing period
+  function getPlanIdForBillingPeriod(
+    basePlanId: PaymentPlanId,
+    period: BillingPeriod
+  ): PaymentPlanId {
+    if (period === "annual") {
+      switch (basePlanId) {
+        case PaymentPlanId.Starter:
+          return PaymentPlanId.StarterAnnual;
+        case PaymentPlanId.Pro:
+          return PaymentPlanId.ProAnnual;
+        case PaymentPlanId.Business:
+          return PaymentPlanId.BusinessAnnual;
+        default:
+          return basePlanId;
+      }
+    }
+    return basePlanId;
+  }
+
+  const handleCustomerPortalClick = async () => {
     if (!user) {
       navigate("/login");
       return;
     }
 
-    if (customerPortalUrlError) {
-      setErrorMessage("Error fetching Customer Portal URL");
-      return;
-    }
+    try {
+      setIsPaymentLoading(true);
+      setErrorMessage(null);
 
-    if (!customerPortalUrl) {
-      setErrorMessage(`Customer Portal does not exist for user ${user.id}`);
-      return;
-    }
+      // Fetch portal URL with current page as return URL
+      const portalUrl = await getCustomerPortalUrl({
+        returnUrl: window.location.pathname,
+      });
 
-    window.open(customerPortalUrl, "_blank");
+      if (!portalUrl) {
+        setErrorMessage(`Customer Portal does not exist for user ${user.id}`);
+        return;
+      }
+
+      window.open(portalUrl, "_blank");
+    } catch (error: unknown) {
+      console.error(error);
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Error fetching Customer Portal URL");
+      }
+    } finally {
+      setIsPaymentLoading(false);
+    }
   };
 
   return (
@@ -252,8 +292,8 @@ export default function PricingPage() {
                 isVisible={isVisible}
                 isLoading={isPaymentLoading}
                 isUserSubscribed={isUserSubscribed}
-                isCustomerPortalLoading={isCustomerPortalUrlLoading}
-                onBuyClick={() => handleBuyNowClick(tier.id)}
+                isCustomerPortalLoading={isPaymentLoading}
+                onBuyClick={() => handleBuyNowClick(tier.id, billingPeriod)}
                 onManageClick={handleCustomerPortalClick}
                 hasUser={!!user}
               />

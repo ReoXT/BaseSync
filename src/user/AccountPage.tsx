@@ -1,4 +1,5 @@
-import { getCustomerPortalUrl, useQuery } from "wasp/client/operations";
+import React from "react";
+import { getCustomerPortalUrl } from "wasp/client/operations";
 import { Link as WaspRouterLink, routes } from "wasp/client/router";
 import type { User } from "wasp/entities";
 import { Button } from "../client/components/ui/button";
@@ -158,19 +159,36 @@ function prettyPrintEndOfBillingPeriod(date: Date) {
 }
 
 function CustomerPortalButton() {
-  const { data: customerPortalUrl, isLoading: isCustomerPortalUrlLoading } =
-    useQuery(getCustomerPortalUrl);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  if (!customerPortalUrl) {
-    return null;
-  }
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Pass current page as return URL
+      const portalUrl = await getCustomerPortalUrl({
+        returnUrl: window.location.pathname,
+      });
+
+      if (portalUrl) {
+        window.open(portalUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <a href={customerPortalUrl} target="_blank" rel="noopener noreferrer">
-      <Button disabled={isCustomerPortalUrlLoading} variant="link">
-        Manage Payment Details
-      </Button>
-    </a>
+    <Button
+      onClick={handleClick}
+      disabled={isLoading}
+      variant="link"
+    >
+      {isLoading ? "Loading..." : "Manage Payment Details"}
+    </Button>
   );
 }
 

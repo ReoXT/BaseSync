@@ -13,7 +13,10 @@ export type CheckoutSession = {
   sessionId: string;
 };
 
-const generateCheckoutSessionSchema = z.nativeEnum(PaymentPlanId);
+const generateCheckoutSessionSchema = z.object({
+  paymentPlanId: z.nativeEnum(PaymentPlanId),
+  returnUrl: z.string().optional(),
+});
 
 type GenerateCheckoutSessionInput = z.infer<
   typeof generateCheckoutSessionSchema
@@ -22,7 +25,7 @@ type GenerateCheckoutSessionInput = z.infer<
 export const generateCheckoutSession: GenerateCheckoutSession<
   GenerateCheckoutSessionInput,
   CheckoutSession
-> = async (rawPaymentPlanId, context) => {
+> = async (args, context) => {
   if (!context.user) {
     throw new HttpError(
       401,
@@ -30,9 +33,9 @@ export const generateCheckoutSession: GenerateCheckoutSession<
     );
   }
 
-  const paymentPlanId = ensureArgsSchemaOrThrowHttpError(
+  const { paymentPlanId, returnUrl } = ensureArgsSchemaOrThrowHttpError(
     generateCheckoutSessionSchema,
-    rawPaymentPlanId,
+    args,
   );
   const userId = context.user.id;
   const userEmail = context.user.email;
@@ -47,6 +50,7 @@ export const generateCheckoutSession: GenerateCheckoutSession<
     userEmail,
     paymentPlan,
     prismaUserDelegate: context.entities.User,
+    returnUrl,
   });
 
   return {
@@ -55,10 +59,16 @@ export const generateCheckoutSession: GenerateCheckoutSession<
   };
 };
 
+const getCustomerPortalUrlSchema = z.object({
+  returnUrl: z.string().optional(),
+}).optional();
+
+type GetCustomerPortalUrlInput = z.infer<typeof getCustomerPortalUrlSchema>;
+
 export const getCustomerPortalUrl: GetCustomerPortalUrl<
-  void,
+  GetCustomerPortalUrlInput,
   string | null
-> = async (_args, context) => {
+> = async (args, context) => {
   if (!context.user) {
     throw new HttpError(
       401,
@@ -66,8 +76,14 @@ export const getCustomerPortalUrl: GetCustomerPortalUrl<
     );
   }
 
+  const validatedArgs = args ? ensureArgsSchemaOrThrowHttpError(
+    getCustomerPortalUrlSchema,
+    args,
+  ) : undefined;
+
   return paymentProcessor.fetchCustomerPortalUrl({
     userId: context.user.id,
     prismaUserDelegate: context.entities.User,
+    returnUrl: validatedArgs?.returnUrl,
   });
 };

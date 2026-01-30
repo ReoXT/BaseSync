@@ -87,6 +87,25 @@ export const PLAN_LIMITS: Record<PaymentPlanId, PlanLimits> = {
     syncIntervalMinutes: 5,
     name: 'Business',
   },
+  // Annual plans have the same limits as monthly plans
+  [PaymentPlanId.StarterAnnual]: {
+    maxSyncConfigs: 1,
+    maxRecordsPerSync: 1000,
+    syncIntervalMinutes: 15,
+    name: 'Starter',
+  },
+  [PaymentPlanId.ProAnnual]: {
+    maxSyncConfigs: 3,
+    maxRecordsPerSync: 5000,
+    syncIntervalMinutes: 5,
+    name: 'Pro',
+  },
+  [PaymentPlanId.BusinessAnnual]: {
+    maxSyncConfigs: 10,
+    maxRecordsPerSync: Number.MAX_SAFE_INTEGER, // Unlimited
+    syncIntervalMinutes: 5,
+    name: 'Business',
+  },
 };
 
 // Default limits for users without a subscription (trial or free tier)
@@ -180,6 +199,9 @@ function getUserPlan(user: User): PaymentPlanId {
     'starter': PaymentPlanId.Starter,
     'pro': PaymentPlanId.Pro,
     'business': PaymentPlanId.Business,
+    'starter-annual': PaymentPlanId.StarterAnnual,
+    'pro-annual': PaymentPlanId.ProAnnual,
+    'business-annual': PaymentPlanId.BusinessAnnual,
   };
 
   return planMap[user.subscriptionPlan.toLowerCase()] || PaymentPlanId.Starter;

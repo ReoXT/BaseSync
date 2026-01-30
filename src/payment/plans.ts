@@ -11,6 +11,9 @@ export enum PaymentPlanId {
   Starter = "starter",
   Pro = "pro",
   Business = "business",
+  StarterAnnual = "starter-annual",
+  ProAnnual = "pro-annual",
+  BusinessAnnual = "business-annual",
 }
 
 export interface PaymentPlan {
@@ -43,6 +46,21 @@ export const paymentPlans = {
       requireNodeEnvVar("PAYMENTS_BUSINESS_SUBSCRIPTION_PLAN_ID"),
     effect: { kind: "subscription" },
   },
+  [PaymentPlanId.StarterAnnual]: {
+    getPaymentProcessorPlanId: () =>
+      requireNodeEnvVar("PAYMENTS_STARTER_ANNUAL_SUBSCRIPTION_PLAN_ID"),
+    effect: { kind: "subscription" },
+  },
+  [PaymentPlanId.ProAnnual]: {
+    getPaymentProcessorPlanId: () =>
+      requireNodeEnvVar("PAYMENTS_PRO_ANNUAL_SUBSCRIPTION_PLAN_ID"),
+    effect: { kind: "subscription" },
+  },
+  [PaymentPlanId.BusinessAnnual]: {
+    getPaymentProcessorPlanId: () =>
+      requireNodeEnvVar("PAYMENTS_BUSINESS_ANNUAL_SUBSCRIPTION_PLAN_ID"),
+    effect: { kind: "subscription" },
+  },
 } as const satisfies Record<PaymentPlanId, PaymentPlan>;
 
 export function prettyPaymentPlanName(planId: PaymentPlanId): string {
@@ -50,6 +68,9 @@ export function prettyPaymentPlanName(planId: PaymentPlanId): string {
     [PaymentPlanId.Starter]: "Starter",
     [PaymentPlanId.Pro]: "Pro",
     [PaymentPlanId.Business]: "Business",
+    [PaymentPlanId.StarterAnnual]: "Starter (Annual)",
+    [PaymentPlanId.ProAnnual]: "Pro (Annual)",
+    [PaymentPlanId.BusinessAnnual]: "Business (Annual)",
   };
   return planToName[planId];
 }

@@ -25,8 +25,8 @@ const tiers: PricingTier[] = [
     id: "starter",
     name: "Starter",
     tagline: "For individuals",
-    monthlyPrice: 9,
-    annualPrice: 7.2,
+    monthlyPrice: 9.99,
+    annualPrice: 7.99,
     features: [
       "1 sync configuration",
       "1,000 records per sync",
@@ -39,8 +39,8 @@ const tiers: PricingTier[] = [
     id: "pro",
     name: "Pro",
     tagline: "For power users",
-    monthlyPrice: 19,
-    annualPrice: 15.2,
+    monthlyPrice: 19.99,
+    annualPrice: 15.99,
     badge: "MOST POPULAR",
     popular: true,
     features: [
@@ -55,8 +55,8 @@ const tiers: PricingTier[] = [
     id: "business",
     name: "Business",
     tagline: "For growing teams",
-    monthlyPrice: 39,
-    annualPrice: 31.2,
+    monthlyPrice: 39.99,
+    annualPrice: 31.99,
     features: [
       "10 sync configurations",
       "Unlimited records",

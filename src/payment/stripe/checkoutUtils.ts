@@ -27,13 +27,18 @@ interface CreateStripeCheckoutSessionParams {
   priceId: Stripe.Price["id"];
   customerId: Stripe.Customer["id"];
   mode: Stripe.Checkout.Session.Mode;
+  returnUrl?: string;
 }
 
 export function createStripeCheckoutSession({
   priceId,
   customerId,
   mode,
+  returnUrl,
 }: CreateStripeCheckoutSessionParams): Promise<Stripe.Checkout.Session> {
+  // Default return URL if not provided
+  const baseReturnUrl = returnUrl || "/pricing";
+
   return stripeClient.checkout.sessions.create({
     customer: customerId,
     line_items: [
@@ -43,14 +48,26 @@ export function createStripeCheckoutSession({
       },
     ],
     mode,
-    success_url: `${config.frontendUrl}/checkout?status=success`,
-    cancel_url: `${config.frontendUrl}/checkout?status=canceled`,
+    success_url: `${config.frontendUrl}${baseReturnUrl}${baseReturnUrl.includes("?") ? "&" : "?"}checkout=success`,
+    cancel_url: `${config.frontendUrl}${baseReturnUrl}${baseReturnUrl.includes("?") ? "&" : "?"}checkout=canceled`,
     automatic_tax: { enabled: true },
     allow_promotion_codes: true,
     customer_update: {
       address: "auto",
     },
     invoice_creation: getInvoiceCreationConfig(mode),
+    // Add 14-day free trial for subscription mode
+    ...(mode === "subscription" && {
+      subscription_data: {
+        trial_period_days: 14,
+        trial_settings: {
+          end_behavior: {
+            missing_payment_method: "cancel",
+          },
+        },
+      },
+      payment_method_collection: "if_required",
+    }),
   });
 }
 

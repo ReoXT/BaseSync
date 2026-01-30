@@ -10,11 +10,13 @@ export interface CreateCheckoutSessionArgs {
   userEmail: NonNullable<User["email"]>;
   paymentPlan: PaymentPlan;
   prismaUserDelegate: PrismaClient["user"];
+  returnUrl?: string;
 }
 
 export interface FetchCustomerPortalUrlArgs {
   userId: User["id"];
   prismaUserDelegate: PrismaClient["user"];
+  returnUrl?: string;
 }
 
 export interface PaymentProcessor {

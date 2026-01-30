@@ -38,7 +38,7 @@ export function createPolarCheckoutSession({
 }: CreatePolarCheckoutSessionArgs): Promise<Checkout> {
   return polarClient.checkouts.create({
     products: [productId],
-    successUrl: `${config.frontendUrl}/checkout?status=success`,
+    successUrl: `${config.frontendUrl}/account/settings?status=success`,
     customerId,
   });
 }

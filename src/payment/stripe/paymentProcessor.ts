@@ -25,6 +25,7 @@ export const stripePaymentProcessor: PaymentProcessor = {
     userEmail,
     paymentPlan,
     prismaUserDelegate,
+    returnUrl,
   }: CreateCheckoutSessionArgs) => {
     const customer = await ensureStripeCustomer(userEmail);
 
@@ -37,6 +38,7 @@ export const stripePaymentProcessor: PaymentProcessor = {
       customerId: customer.id,
       priceId: paymentPlan.getPaymentProcessorPlanId(),
       mode: paymentPlanEffectToStripeCheckoutSessionMode(paymentPlan.effect),
+      returnUrl,
     });
 
     if (!checkoutSession.url) {
@@ -55,6 +57,7 @@ export const stripePaymentProcessor: PaymentProcessor = {
   fetchCustomerPortalUrl: async ({
     prismaUserDelegate,
     userId,
+    returnUrl,
   }: FetchCustomerPortalUrlArgs) => {
     const paymentProcessorUserId = await fetchUserPaymentProcessorUserId(
       userId,
@@ -65,10 +68,13 @@ export const stripePaymentProcessor: PaymentProcessor = {
       return null;
     }
 
+    // Default to pricing page if no return URL provided
+    const baseReturnUrl = returnUrl || "/pricing";
+
     const billingPortalSession =
       await stripeClient.billingPortal.sessions.create({
         customer: paymentProcessorUserId,
-        return_url: `${config.frontendUrl}/account`,
+        return_url: `${config.frontendUrl}${baseReturnUrl}`,
       });
 
     return billingPortalSession.url;

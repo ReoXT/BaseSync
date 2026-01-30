@@ -11,9 +11,9 @@ export const userMenuItems = [
   },
   {
     name: "Account Settings",
-    to: routes.AccountRoute.to,
+    to: routes.AccountSettingsRoute.to,
     icon: Settings,
-    isAuthRequired: false,
+    isAuthRequired: true,
     isAdminOnly: false,
   },
   {

@@ -140,6 +140,58 @@ action updateIsUserAdminById {
   fn: import { updateIsUserAdminById } from "@src/user/operations",
   entities: [User]
 }
+
+//#region Account Settings
+route AccountSettingsRoute { path: "/account/settings", to: AccountSettingsPage }
+page AccountSettingsPage {
+  authRequired: true,
+  component: import AccountSettings from "@src/user/AccountSettingsPage"
+}
+
+route VerifyEmailChangeRoute { path: "/account/verify-email-change", to: VerifyEmailChangePage }
+page VerifyEmailChangePage {
+  authRequired: true,
+  component: import VerifyEmailChange from "@src/user/VerifyEmailChangePage"
+}
+
+// Profile actions
+action updateUsername {
+  fn: import { updateUsername } from "@src/user/accountSettings",
+  entities: [User]
+}
+
+action requestEmailChange {
+  fn: import { requestEmailChange } from "@src/user/accountSettings",
+  entities: [User]
+}
+
+action confirmEmailChange {
+  fn: import { confirmEmailChange } from "@src/user/accountSettings",
+  entities: [User]
+}
+
+action updateNotificationPreferences {
+  fn: import { updateNotificationPreferences } from "@src/user/accountSettings",
+  entities: [User]
+}
+
+// Security
+action changePassword {
+  fn: import { changePassword } from "@src/user/security",
+  entities: [User]
+}
+
+// Danger zone
+action deleteAccount {
+  fn: import { deleteAccount } from "@src/user/dangerZone",
+  entities: [User, AirtableConnection, GoogleSheetsConnection, SyncConfig, SyncLog, UsageStats]
+}
+
+query exportUserData {
+  fn: import { exportUserData } from "@src/user/dangerZone",
+  entities: [User, AirtableConnection, GoogleSheetsConnection, SyncConfig, SyncLog, UsageStats]
+}
+//#endregion
 //#endregion
 
 //#region BaseSync Dashboard
