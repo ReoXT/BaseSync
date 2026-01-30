@@ -301,7 +301,7 @@ export default function ProblemSection() {
         >
           <p className="text-sm text-muted-foreground">
             <span className="text-cyan-400 font-semibold">BaseSync</span> handles all of
-            this automatically — no configuration, no maintenance, no headaches.
+            this automatically, no configuration, no maintenance, no headaches.
           </p>
         </div>
       </div>

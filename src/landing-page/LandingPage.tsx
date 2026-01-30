@@ -19,7 +19,7 @@ export default function LandingPage() {
         <SocialProofSection />
         <FAQ faqs={faqs} />
       </main>
-      <Footer footerNavigation={footerNavigation} />
+      {/* <Footer footerNavigation={footerNavigation} /> */}
     </div>
   );
 }

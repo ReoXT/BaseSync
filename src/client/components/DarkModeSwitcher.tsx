@@ -46,7 +46,7 @@ function ModeIcon({ isInLightMode }: { isInLightMode: boolean }) {
       <span
         className={cn(iconStyle, isInLightMode ? "opacity-100" : "opacity-0")}
       >
-        <Sun className="size-4 fill-amber-500 stroke-amber-500" />
+        <Sun className="size-4 fill-cyan-500 stroke-cyan-500" />
       </span>
       <span
         className={cn(iconStyle, !isInLightMode ? "opacity-100" : "opacity-0")}
