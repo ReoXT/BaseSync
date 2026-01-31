@@ -7,11 +7,11 @@ import { HttpError } from 'wasp/server';
 import { syncAirtableToSheets } from '../sync/airtableToSheets';
 import { syncSheetsToAirtable } from '../sync/sheetsToAirtable';
 import { syncBidirectional } from '../sync/bidirectionalSync';
-import { getDecryptedConnection as getDecryptedAirtableConnection } from '../airtable/encryption';
-import { getDecryptedConnection as getDecryptedGoogleConnection } from '../google/encryption';
+import { getValidAirtableToken, getValidGoogleToken } from '../utils/tokenManager';
 import type { ConflictResolutionStrategy } from '../sync/conflictDetector';
-import { checkRecordLimit, isApproachingRecordLimit } from '../middleware/usageLimits';
+import { checkRecordLimit, isApproachingRecordLimit, shouldPauseSyncs, getSyncPauseReason } from '../middleware/usageLimits';
 import { trackRecordsSynced } from '../utils/usageTracker';
+import type { User } from 'wasp/entities';
 
 // ============================================================================
 // Types
@@ -183,6 +183,18 @@ export const triggerManualSync = async (
   // Store for error logging
   syncConfigForLogging = syncConfig;
 
+  // ==========================================================================
+  // STEP 2.5: Check subscription/trial status
+  // ==========================================================================
+  // CRITICAL: Prevent syncs if trial expired or subscription inactive
+  if (shouldPauseSyncs(syncConfig.user as User)) {
+    const pauseReason = getSyncPauseReason(syncConfig.user as User);
+    console.warn('[ManualSync] Syncs paused for user:', pauseReason);
+    const errorMsg = pauseReason || 'Your trial has expired or subscription is inactive. Please upgrade to continue syncing.';
+    await logSyncError(errorMsg, 'SUBSCRIPTION_REQUIRED');
+    throw new HttpError(402, errorMsg); // 402 Payment Required
+  }
+
   // Edge case: Sync config is inactive
   if (!syncConfig.isActive) {
     console.warn('[ManualSync] Sync config is inactive');
@@ -241,24 +253,35 @@ export const triggerManualSync = async (
   console.log('[ManualSync] Connections validated');
 
   // ==========================================================================
-  // STEP 5: Decrypt access tokens
+  // STEP 5: Get valid access tokens (auto-refreshes if needed)
   // ==========================================================================
-  console.log('[ManualSync] Decrypting access tokens...');
+  console.log('[ManualSync] Getting valid access tokens...');
 
   let airtableAccessToken: string;
   let sheetsAccessToken: string;
 
   try {
-    airtableAccessToken = await getDecryptedAirtableConnection(
-      airtableConnection.accessToken
-    );
-    sheetsAccessToken = await getDecryptedGoogleConnection(googleConnection.accessToken);
+    // This automatically checks expiry and refreshes tokens if needed
+    airtableAccessToken = await getValidAirtableToken(context.user.id);
+    console.log('[ManualSync] ✓ Got valid Airtable token');
   } catch (error) {
-    // Edge case: Token decryption failure
-    console.error('[ManualSync] Failed to decrypt tokens:', error);
-    const errorMsg = 'Failed to decrypt authentication tokens. Please reconnect your accounts.';
-    await logSyncError(errorMsg, 'TOKEN_DECRYPTION_ERROR');
-    throw new HttpError(500, errorMsg);
+    // Edge case: Token refresh failure or needs reauth
+    console.error('[ManualSync] Failed to get valid Airtable token:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to get Airtable access token. Please reconnect your Airtable account.';
+    await logSyncError(errorMsg, 'AIRTABLE_TOKEN_ERROR');
+    throw new HttpError(401, errorMsg);
+  }
+
+  try {
+    // This automatically checks expiry and refreshes tokens if needed
+    sheetsAccessToken = await getValidGoogleToken(context.user.id);
+    console.log('[ManualSync] ✓ Got valid Google Sheets token');
+  } catch (error) {
+    // Edge case: Token refresh failure or needs reauth
+    console.error('[ManualSync] Failed to get valid Google Sheets token:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to get Google Sheets access token. Please reconnect your Google account.';
+    await logSyncError(errorMsg, 'GOOGLE_TOKEN_ERROR');
+    throw new HttpError(401, errorMsg);
   }
 
   // ==========================================================================
@@ -696,6 +719,17 @@ export const runInitialSync = async (
   console.log('[InitialSync] Previous syncs:', syncConfig.syncLogs.length);
 
   // ==========================================================================
+  // STEP 2.5: Check subscription/trial status
+  // ==========================================================================
+  // CRITICAL: Prevent syncs if trial expired or subscription inactive
+  if (shouldPauseSyncs(syncConfig.user as User)) {
+    const pauseReason = getSyncPauseReason(syncConfig.user as User);
+    console.warn('[InitialSync] Syncs paused for user:', pauseReason);
+    const errorMsg = pauseReason || 'Your trial has expired or subscription is inactive. Please upgrade to continue syncing.';
+    throw new HttpError(402, errorMsg); // 402 Payment Required
+  }
+
+  // ==========================================================================
   // STEP 3: Warn if this is not truly an initial sync
   // ==========================================================================
   const warnings: string[] = [];
@@ -753,25 +787,33 @@ export const runInitialSync = async (
   console.log('[InitialSync] Connections validated');
 
   // ==========================================================================
-  // STEP 5: Decrypt access tokens
+  // STEP 5: Get valid access tokens (auto-refreshes if needed)
   // ==========================================================================
-  console.log('[InitialSync] Decrypting access tokens...');
+  console.log('[InitialSync] Getting valid access tokens...');
 
   let airtableAccessToken: string;
   let sheetsAccessToken: string;
 
   try {
-    airtableAccessToken = await getDecryptedAirtableConnection(
-      airtableConnection.accessToken
-    );
-    sheetsAccessToken = await getDecryptedGoogleConnection(googleConnection.accessToken);
+    // This automatically checks expiry and refreshes tokens if needed
+    airtableAccessToken = await getValidAirtableToken(syncConfig.userId);
+    console.log('[InitialSync] ✓ Got valid Airtable token');
   } catch (error) {
-    // Edge case: Token decryption failure
-    console.error('[InitialSync] Failed to decrypt tokens:', error);
-    throw new HttpError(
-      500,
-      'Failed to decrypt authentication tokens. Please reconnect your accounts.'
-    );
+    // Edge case: Token refresh failure or needs reauth
+    console.error('[InitialSync] Failed to get valid Airtable token:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to get Airtable access token. Please reconnect your Airtable account.';
+    throw new HttpError(401, errorMsg);
+  }
+
+  try {
+    // This automatically checks expiry and refreshes tokens if needed
+    sheetsAccessToken = await getValidGoogleToken(syncConfig.userId);
+    console.log('[InitialSync] ✓ Got valid Google Sheets token');
+  } catch (error) {
+    // Edge case: Token refresh failure or needs reauth
+    console.error('[InitialSync] Failed to get valid Google Sheets token:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to get Google Sheets access token. Please reconnect your Google account.';
+    throw new HttpError(401, errorMsg);
   }
 
   // ==========================================================================

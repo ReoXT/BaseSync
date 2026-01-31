@@ -13,8 +13,10 @@ export type AirtableFieldType =
   | 'multilineText'
   | 'richText'
   | 'email'
+  | 'emailAddress' // Alternative email field type name
   | 'url'
   | 'phoneNumber'
+  | 'phone' // Alternative phone field type name
   | 'number'
   | 'currency'
   | 'percent'

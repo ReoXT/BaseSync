@@ -48,7 +48,7 @@ type GetSpreadsheetSheetsOutput = {
 
 type GetSheetColumnHeadersInput = {
   spreadsheetId: string;
-  sheetId: number;
+  sheetId: string | number; // Accept both sheet name and numeric gid
 };
 type GetSheetColumnHeadersOutput = {
   headers: string[];
@@ -287,7 +287,12 @@ export const getSheetColumnHeaders: GetSheetColumnHeaders<
 
     // Get the total column count from metadata
     const metadata = await googleClient.getSpreadsheet(accessToken, spreadsheetId);
-    const sheet = metadata.sheets.find((s) => s.properties.sheetId === sheetId);
+
+    // Find sheet by either numeric ID or name
+    const sheet = typeof sheetId === 'number'
+      ? metadata.sheets.find((s) => s.properties.sheetId === sheetId)
+      : metadata.sheets.find((s) => s.properties.title === sheetId);
+
     const columnCount = sheet?.properties.gridProperties?.columnCount || headers.length;
 
     // If headers are empty, generate column letters (A, B, C, etc.)

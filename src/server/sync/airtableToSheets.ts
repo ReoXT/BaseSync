@@ -11,6 +11,9 @@ import {
   appendRows,
   clearSheetData,
   getSheetIdByName,
+  hideColumn,
+  columnNumberToLetter,
+  ensureColumnsExist,
   type SheetData,
 } from '../google/client';
 import { airtableRecordToSheetsRow } from './fieldMapper';
@@ -142,6 +145,10 @@ export async function syncAirtableToSheets(
     batchSize = 100,
   } = options;
 
+  // CRITICAL: Use fixed column AA (index 26) for record IDs to avoid shifting user's columns
+  const FIXED_ID_COLUMN_INDEX = 26; // Column AA
+  const actualIdColumnIndex = idColumnIndex === 0 ? FIXED_ID_COLUMN_INDEX : idColumnIndex;
+
   try {
     // ========================================================================
     // STEP 1: Fetch Airtable Records
@@ -257,13 +264,17 @@ export async function syncAirtableToSheets(
           }
         );
 
-        // Prepend record ID to row if using ID column
+        // Place record ID in the designated column (column AA by default)
+        // We need to pad the row to ensure it has enough columns
         const fullRow = [...row];
-        if (idColumnIndex === 0) {
-          fullRow.unshift(record.id);
-        } else if (idColumnIndex > 0) {
-          fullRow.splice(idColumnIndex, 0, record.id);
+
+        // Ensure the row has enough elements to place the ID at actualIdColumnIndex
+        while (fullRow.length <= actualIdColumnIndex) {
+          fullRow.push(''); // Pad with empty strings
         }
+
+        // Insert the record ID at the correct column index
+        fullRow[actualIdColumnIndex] = record.id;
 
         transformedRows.push(fullRow);
         recordIdMapping.set(i, record.id);
@@ -355,11 +366,13 @@ export async function syncAirtableToSheets(
       console.log(`[AirtableToSheets] Adding header row...`);
 
       const headerRow = tableFields.map((f) => f.name);
-      if (idColumnIndex === 0) {
-        headerRow.unshift('Record ID');
-      } else if (idColumnIndex > 0) {
-        headerRow.splice(idColumnIndex, 0, 'Record ID');
+
+      // Add "Record ID" header at the correct column position (column AA if default)
+      // Pad the array to ensure column AA exists
+      while (headerRow.length <= actualIdColumnIndex) {
+        headerRow.push('');
       }
+      headerRow[actualIdColumnIndex] = 'Record ID';
 
       try {
         await retryWithBackoff(
@@ -484,7 +497,38 @@ export async function syncAirtableToSheets(
     }
 
     // ========================================================================
-    // STEP 8: Finalize
+    // STEP 8: Ensure Column AA Exists and Hide It
+    // ========================================================================
+
+    // Auto-hide the ID column (column AA) to keep sheets clean for users
+    if (actualIdColumnIndex === FIXED_ID_COLUMN_INDEX && (result.added > 0 || result.updated > 0)) {
+      const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+      try {
+        // STEP 1: Ensure column AA exists before trying to hide it
+        // This prevents the "column doesn't exist" error when trying to hide column 26 (AA)
+        const requiredColumnCount = actualIdColumnIndex + 1; // Need at least 27 columns for column AA (index 26)
+        console.log(
+          `[AirtableToSheets] Ensuring column ${columnLetter} exists (need ${requiredColumnCount} columns)...`
+        );
+        await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
+
+        // STEP 2: Hide column AA
+        console.log(`[AirtableToSheets] Hiding ID column ${columnLetter}...`);
+        await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
+        console.log(
+          `[AirtableToSheets] ✓ Hidden column ${columnLetter} (users won't see record IDs)`
+        );
+      } catch (error) {
+        // Non-fatal - log warning
+        result.warnings.push(
+          `Could not auto-hide ID column: ${error instanceof Error ? error.message : String(error)}`
+        );
+        console.warn('[AirtableToSheets] Failed to hide ID column:', error);
+      }
+    }
+
+    // ========================================================================
+    // STEP 9: Finalize
     // ========================================================================
 
     console.log(

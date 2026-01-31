@@ -9,8 +9,7 @@ import type { User } from 'wasp/entities';
 import { syncAirtableToSheets } from '../sync/airtableToSheets';
 import { syncSheetsToAirtable } from '../sync/sheetsToAirtable';
 import { syncBidirectional } from '../sync/bidirectionalSync';
-import { getDecryptedConnection as getDecryptedAirtableConnection } from '../airtable/encryption';
-import { getDecryptedConnection as getDecryptedGoogleConnection } from '../google/encryption';
+import { getValidAirtableToken, getValidGoogleToken } from '../utils/tokenManager';
 import type { ConflictResolutionStrategy } from '../sync/conflictDetector';
 import { shouldPauseSyncs, getSyncPauseReason, getSyncFrequency } from '../middleware/usageLimits';
 import { sendSyncFailedEmail, checkAndSendUsageEmails } from '../emails/notificationSender';
@@ -172,16 +171,44 @@ export const performSync: SyncJob<never, void> = async (_args, context) => {
         }
 
         // --------------------------------------------------------------------
-        // 2.2: Decrypt access tokens
+        // 2.2: Get valid access tokens (auto-refreshes if needed)
         // --------------------------------------------------------------------
-        console.log('[SyncJob] Decrypting access tokens...');
+        console.log('[SyncJob] Getting valid access tokens...');
 
-        const airtableAccessToken = await getDecryptedAirtableConnection(
-          airtableConnection.accessToken
-        );
-        const sheetsAccessToken = await getDecryptedGoogleConnection(
-          googleConnection.accessToken
-        );
+        let airtableAccessToken: string;
+        let sheetsAccessToken: string;
+
+        try {
+          airtableAccessToken = await getValidAirtableToken(config.userId);
+          console.log('[SyncJob] ✓ Got valid Airtable token');
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to get Airtable access token';
+          console.error(`[SyncJob] ✗ ${message}`);
+          result.skipped++;
+          result.results.push({
+            configId: config.id,
+            configName: config.name,
+            status: 'SKIPPED',
+            message,
+          });
+          continue;
+        }
+
+        try {
+          sheetsAccessToken = await getValidGoogleToken(config.userId);
+          console.log('[SyncJob] ✓ Got valid Google Sheets token');
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to get Google Sheets access token';
+          console.error(`[SyncJob] ✗ ${message}`);
+          result.skipped++;
+          result.results.push({
+            configId: config.id,
+            configName: config.name,
+            status: 'SKIPPED',
+            message,
+          });
+          continue;
+        }
 
         // --------------------------------------------------------------------
         // 2.3: Execute sync based on direction

@@ -3,6 +3,7 @@
 import TailwindForms from "@tailwindcss/forms";
 import TailwindTypography from "@tailwindcss/typography";
 import TailwindAnimate from "tailwindcss-animate";
+import DaisyUI from "daisyui";
 import defaultTheme from "tailwindcss/defaultTheme";
 import { resolveProjectPath } from "wasp/dev";
 
@@ -285,5 +286,13 @@ export default {
       },
     },
   },
-  plugins: [TailwindForms, TailwindTypography, TailwindAnimate],
+  plugins: [TailwindForms, TailwindTypography, TailwindAnimate, DaisyUI],
+  daisyui: {
+    themes: ["light", "dark"], // Use DaisyUI's built-in light/dark themes
+    darkTheme: "dark", // Name of the dark theme
+    base: true, // Apply base styles
+    styled: true, // Apply component styles
+    utils: true, // Add utility classes
+    logs: false, // Disable console logs
+  },
 };

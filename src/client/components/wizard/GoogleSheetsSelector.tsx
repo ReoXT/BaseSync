@@ -140,7 +140,7 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
         spreadsheetId: selectedSpreadsheetId,
         spreadsheetName: spreadsheets?.find((s: GoogleSpreadsheet) => s.id === selectedSpreadsheetId)
           ?.name,
-        sheetId: sheetIdStr,
+        sheetId: sheetName, // Use sheet name instead of gid for better compatibility
         sheetName,
       });
     } catch (error) {

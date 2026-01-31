@@ -14,6 +14,10 @@ import {
   updateSheetData,
   appendRows,
   getSpreadsheet,
+  detectLastColumnIndex,
+  hideColumn,
+  ensureColumnsExist,
+  columnNumberToLetter,
   type SheetData,
 } from '../google/client';
 import { airtableRecordToSheetsRow, sheetsRowToAirtableFields } from './fieldMapper';
@@ -160,6 +164,8 @@ interface SyncCheckpoint {
   sheetsRows: any[][];
   /** Table field definitions */
   tableFields: AirtableField[];
+  /** Primary field name (for smart matching) */
+  primaryFieldName?: string;
   /** Conflict detection results */
   conflictResults?: ConflictDetectionResult;
   /** Conflict resolutions */
@@ -236,6 +242,9 @@ export async function syncBidirectional(
     tableFields: [],
   };
 
+  // Track the actual ID column index (will be set after detecting last column)
+  let actualIdColumnIndex = idColumnIndex;
+
   console.log(`\n${'='.repeat(80)}`);
   console.log(`[BidirectionalSync] Starting bidirectional sync for config: ${syncConfigId}`);
   console.log(`[BidirectionalSync] Conflict resolution strategy: ${conflictResolution}`);
@@ -272,6 +281,13 @@ export async function syncBidirectional(
       }
 
       checkpoint.tableFields = table.fields;
+
+      // Get primary field name for smart matching (when no record IDs available)
+      const primaryField = table.fields.find((f) => f.id === table.primaryFieldId);
+      if (primaryField) {
+        checkpoint.primaryFieldName = primaryField.name;
+        console.log(`[Phase 1: Fetch] Primary field for matching: "${checkpoint.primaryFieldName}"`);
+      }
 
       // Apply field mappings if provided
       if (fieldMappings && Object.keys(fieldMappings).length > 0) {
@@ -315,6 +331,20 @@ export async function syncBidirectional(
 
       checkpoint.sheetsRows = sheetData.values || [];
 
+      // CRITICAL: ALWAYS use a fixed far-right column for IDs to avoid shifting user's visible columns
+      // We use column AA (index 26) by default - far enough that it won't interfere with typical data
+      // This applies to EVERY sync, regardless of whether data exists or not
+      if (idColumnIndex === 0) {
+        const FIXED_ID_COLUMN_INDEX = 26; // Column AA (A=0, B=1, ..., Z=25, AA=26)
+        actualIdColumnIndex = FIXED_ID_COLUMN_INDEX;
+
+        const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+
+        console.log(
+          `[Phase 1: Fetch] Using fixed column ${columnLetter} (index ${actualIdColumnIndex}) for record IDs (will be hidden)`
+        );
+      }
+
       // Skip header row if configured
       if (includeHeader && checkpoint.sheetsRows.length > 0) {
         checkpoint.sheetsRows = checkpoint.sheetsRows.slice(1);
@@ -347,7 +377,7 @@ export async function syncBidirectional(
         checkpoint.airtableRecords,
         checkpoint.sheetsRows,
         syncConfigId,
-        idColumnIndex
+        actualIdColumnIndex
       );
 
       const summary = summarizeConflicts(checkpoint.conflictResults);
@@ -470,17 +500,30 @@ export async function syncBidirectional(
             tableId,
           });
 
-          // Prepend record ID
-          const fullRow = [record.id, ...row];
+          // Build row with record ID at column AA (actualIdColumnIndex), not column 0
+          // Create array with enough space for all columns including AA
+          const fullRow = [...row];
+
+          // Pad array to ensure column AA exists
+          while (fullRow.length <= actualIdColumnIndex) {
+            fullRow.push('');
+          }
+
+          // Set record ID at column AA
+          fullRow[actualIdColumnIndex] = record.id;
 
           // Add sync timestamp if configured
           if (syncTimestampColumnIndex !== undefined) {
+            // Ensure array is long enough for timestamp column
+            while (fullRow.length <= syncTimestampColumnIndex) {
+              fullRow.push('');
+            }
             fullRow[syncTimestampColumnIndex] = new Date().toISOString();
           }
 
           // Find if row exists in Sheets
           const existingRowIndex = checkpoint.sheetsRows.findIndex(
-            (r) => r[idColumnIndex] === record.id
+            (r) => r[actualIdColumnIndex] === record.id
           );
 
           if (existingRowIndex >= 0) {
@@ -539,6 +582,30 @@ export async function syncBidirectional(
         );
       }
 
+      // After syncing Airtable → Sheets, ensure column AA exists and is hidden
+      if ((added > 0 || updated > 0) && !dryRun) {
+        try {
+          const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+
+          // STEP 1: Ensure column AA exists
+          // This prevents errors when the sheet only has columns A-Z (0-25)
+          const requiredColumnCount = actualIdColumnIndex + 1; // Need at least 27 columns for column AA (index 26)
+          console.log(
+            `[Phase 4: Airtable → Sheets] Ensuring column ${columnLetter} exists (need ${requiredColumnCount} columns)...`
+          );
+          await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
+
+          // STEP 2: Hide column AA to keep sheets clean for users
+          console.log(`[Phase 4: Airtable → Sheets] Hiding ID column ${columnLetter}...`);
+          await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
+          console.log(
+            `[Phase 4: Airtable → Sheets] ✓ Hidden column ${columnLetter} (users won't see record IDs)`
+          );
+        } catch (error) {
+          console.warn('[Phase 4: Airtable → Sheets] Failed to ensure/hide ID column:', error);
+        }
+      }
+
       return {
         metadata: { added, updated, failed: totalFailed },
         errors: phaseErrors,
@@ -560,7 +627,7 @@ export async function syncBidirectional(
       // Determine which rows to sync from Sheets
       const rowsToSync = new Set<number>([
         ...checkpoint.conflictResults.sheetsOnlyChanges.map((id) =>
-          checkpoint.sheetsRows.findIndex((r) => r[idColumnIndex] === id)
+          checkpoint.sheetsRows.findIndex((r) => r[actualIdColumnIndex] === id)
         ),
         ...checkpoint.conflictResults.newInSheets,
       ]);
@@ -570,7 +637,7 @@ export async function syncBidirectional(
         checkpoint.conflictResolutions.forEach((resolution) => {
           if (resolution.action === 'USE_SHEETS') {
             const rowIndex = checkpoint.sheetsRows.findIndex(
-              (r) => r[idColumnIndex] === resolution.recordId
+              (r) => r[actualIdColumnIndex] === resolution.recordId
             );
             if (rowIndex >= 0) {
               rowsToSync.add(rowIndex);
@@ -608,6 +675,7 @@ export async function syncBidirectional(
       let added = 0;
       let updated = 0;
       const phaseErrors: SyncError[] = [];
+      const newRecordIdUpdates: Array<{ row: number; recordId: string }> = [];
 
       // Process rows in batches of 10 (Airtable limit)
       const batchedRows = chunkArray(validRows, Math.min(batchSize, 10));
@@ -620,11 +688,11 @@ export async function syncBidirectional(
         for (const rowIndex of batchIndices) {
           try {
             const row = checkpoint.sheetsRows[rowIndex];
-            const recordId = row[idColumnIndex] ? String(row[idColumnIndex]).trim() : undefined;
+            const recordId = row[actualIdColumnIndex] ? String(row[actualIdColumnIndex]).trim() : undefined;
 
             // Remove ID column from data
             const dataRow = [...row];
-            dataRow.splice(idColumnIndex, 1);
+            dataRow.splice(actualIdColumnIndex, 1);
 
             // Transform to Airtable fields
             const { fields } = await sheetsRowToAirtableFields(dataRow, checkpoint.tableFields, {
@@ -633,11 +701,36 @@ export async function syncBidirectional(
               tableId,
             });
 
-            if (recordId && checkpoint.airtableRecords.find((r) => r.id === recordId)) {
-              // Update existing record
+            let matchedRecord: AirtableRecord | undefined;
+
+            // Strategy 1: Match by record ID (if available)
+            if (recordId) {
+              matchedRecord = checkpoint.airtableRecords.find((r) => r.id === recordId);
+            }
+
+            // Strategy 2: Match by primary field (fallback when no ID)
+            if (!matchedRecord && !recordId && checkpoint.primaryFieldName && fields[checkpoint.primaryFieldName]) {
+              const primaryValue = String(fields[checkpoint.primaryFieldName]).trim().toLowerCase();
+              if (primaryValue) {
+                matchedRecord = checkpoint.airtableRecords.find((r) => {
+                  const recordPrimaryValue = r.fields[checkpoint.primaryFieldName!];
+                  return recordPrimaryValue &&
+                         String(recordPrimaryValue).trim().toLowerCase() === primaryValue;
+                });
+
+                if (matchedRecord) {
+                  console.log(
+                    `[Phase 5: Sheets → Airtable] Matched row ${rowIndex} to existing record ${matchedRecord.id} by primary field "${checkpoint.primaryFieldName}"`
+                  );
+                }
+              }
+            }
+
+            if (matchedRecord) {
+              // Update existing record (matched by ID or primary field)
               const updateIndex = recordsToUpdate.length;
-              recordsToUpdate.push({ id: recordId, fields });
-              rowMetadata.set(updateIndex, { recordId, rowIndex });
+              recordsToUpdate.push({ id: matchedRecord.id, fields });
+              rowMetadata.set(updateIndex, { recordId: matchedRecord.id, rowIndex });
             } else {
               // Create new record
               const createIndex = recordsToCreate.length;
@@ -664,6 +757,17 @@ export async function syncBidirectional(
               { phase: 'sheetsToAirtable' }
             );
             added += created.length;
+
+            // Track new record IDs to write back to Sheets
+            for (let i = 0; i < created.length; i++) {
+              const createdRecord = created[i];
+              const metadata = Array.from(rowMetadata.values())[i];
+              if (metadata && !metadata.recordId && createdRecord.id) {
+                // This was a new record - track its ID and row number
+                const sheetRowNumber = metadata.rowIndex + (includeHeader ? 2 : 1);
+                newRecordIdUpdates.push({ row: sheetRowNumber, recordId: createdRecord.id });
+              }
+            }
           } catch (error) {
             // Batch create failed - log error for all records in batch
             const syncError = classifyError(error, 'sheetsToAirtable');
@@ -721,6 +825,79 @@ export async function syncBidirectional(
         );
       }
 
+      // Write new record IDs back to Google Sheets to prevent duplicates on next sync
+      if (newRecordIdUpdates.length > 0 && !dryRun) {
+        console.log(
+          `[Phase 5: Sheets → Airtable] Writing ${newRecordIdUpdates.length} new record IDs back to Sheets...`
+        );
+
+        try {
+          const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+
+          // STEP 1: Ensure column AA exists before writing to it
+          // This prevents errors when the sheet only has columns A-Z (0-25)
+          const requiredColumnCount = actualIdColumnIndex + 1; // Need at least 27 columns for column AA (index 26)
+          console.log(
+            `[Phase 5: Sheets → Airtable] Ensuring column ${columnLetter} exists (need ${requiredColumnCount} columns)...`
+          );
+          await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
+
+          // STEP 2: Write record IDs to column AA
+          // Sort by row number
+          newRecordIdUpdates.sort((a, b) => a.row - b.row);
+
+          // Update each row's ID column
+          const updatePromises: Promise<any>[] = [];
+
+          for (const update of newRecordIdUpdates) {
+            const range = `${columnLetter}${update.row}`;
+
+            updatePromises.push(
+              updateSheetData(
+                sheetsAccessToken,
+                spreadsheetId,
+                sheetId,
+                range,
+                [[update.recordId]]
+              ).catch((error) => {
+                console.warn(
+                  `[Phase 5: Sheets → Airtable] Failed to write ID for row ${update.row}:`,
+                  error
+                );
+              })
+            );
+
+            // Batch updates to avoid rate limits
+            if (updatePromises.length >= 10) {
+              await Promise.all(updatePromises);
+              updatePromises.length = 0;
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          }
+
+          // Process remaining updates
+          if (updatePromises.length > 0) {
+            await Promise.all(updatePromises);
+          }
+
+          console.log(
+            `[Phase 5: Sheets → Airtable] ✓ Successfully wrote ${newRecordIdUpdates.length} record IDs to column ${columnLetter}`
+          );
+
+          // STEP 3: Hide column AA to keep sheets clean for users
+          try {
+            await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
+            console.log(
+              `[Phase 5: Sheets → Airtable] ✓ Hidden column ${columnLetter} (users won't see record IDs)`
+            );
+          } catch (error) {
+            console.warn('[Phase 5: Sheets → Airtable] Failed to hide ID column:', error);
+          }
+        } catch (error) {
+          console.error('[Phase 5: Sheets → Airtable] Error writing IDs back to Sheets:', error);
+        }
+      }
+
       return {
         metadata: { added, updated, failed: totalFailed },
         errors: phaseErrors,
@@ -745,7 +922,7 @@ export async function syncBidirectional(
       const updatedSheetData = await getSheetData(sheetsAccessToken, spreadsheetId, sheetId);
       const updatedRows = (updatedSheetData.values || []).slice(includeHeader ? 1 : 0);
 
-      updateSyncState(syncConfigId, updatedRecords, updatedRows, idColumnIndex);
+      updateSyncState(syncConfigId, updatedRecords, updatedRows, actualIdColumnIndex);
 
       result.lastSyncAt = new Date();
 

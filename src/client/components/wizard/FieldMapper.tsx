@@ -117,9 +117,10 @@ export function FieldMapper({ value, onChange }: FieldMapperProps) {
     setHeadersError(null);
 
     try {
+      // Pass sheetId as-is - it can be either a sheet name (string) or numeric gid
       const result = await getSheetColumnHeaders({
         spreadsheetId: value.googleSpreadsheetId,
-        sheetId: parseInt(value.googleSheetId, 10),
+        sheetId: value.googleSheetId,
       });
 
       const headers = (result as any).headers || [];

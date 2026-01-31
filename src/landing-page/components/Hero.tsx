@@ -60,7 +60,7 @@ export default function Hero() {
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-delayed-more">
               <Button
                 size="lg"
-                className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-6 text-lg shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 px-8 py-6 text-lg transition-all duration-300"
                 asChild
               >
                 <WaspRouterLink to={routes.SignupRoute.to}>
@@ -248,10 +248,13 @@ function HeroVisual() {
 
                 {/* Platform Logo Area */}
                 <div className="relative flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    <img
+                      src="/airtable-icon.svg"
+                      alt="Airtable"
+                      className="w-full h-full object-contain"
+                      style={{ imageRendering: '-webkit-optimize-contrast', shapeRendering: 'geometricPrecision' }}
+                    />
                   </div>
                   <div>
                     <div className="font-semibold text-foreground text-sm">Airtable</div>
@@ -293,10 +296,8 @@ function HeroVisual() {
 
                 {/* Platform Logo Area */}
                 <div className="relative flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" stroke="currentColor" strokeWidth="1" fill="none"/>
-                    </svg>
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    <img src="/google-sheets-icon.svg" alt="Google Sheets" className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <div className="font-semibold text-foreground text-sm">Google Sheets</div>

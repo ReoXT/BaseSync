@@ -35,7 +35,15 @@
       "Bash(gtimeout 60 wasp start:*)",
       "Bash(wasp db migrate-dev:*)",
       "Bash(done)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "WebFetch(domain:www.vectorlogo.zone)",
+      "WebFetch(domain:uxwing.com)",
+      "WebFetch(domain:www.svgrepo.com)",
+      "Bash(npx wasp db execute:*)",
+      "Bash(cd:*)",
+      "Bash(wasp db --help:*)",
+      "Bash(npx tsx:*)",
+      "Bash(source .env.server)"
     ]
   }
 }

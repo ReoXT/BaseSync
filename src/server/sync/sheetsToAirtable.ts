@@ -17,8 +17,8 @@ import {
   deleteRecords,
   batchOperations,
 } from '../airtable/client';
-import { getSheetData } from '../google/client';
-import { sheetsRowToAirtableFields, isReadOnlyField } from './fieldMapper';
+import { getSheetData, updateSheetData, hideColumn, columnNumberToLetter, ensureColumnsExist } from '../google/client';
+import { sheetsRowToAirtableFields, sheetsRowToAirtableFieldsWithMapping, isReadOnlyField } from './fieldMapper';
 import { resolveNamesToRecordIds, preloadTableCache } from './linkedRecordResolver';
 
 // ============================================================================
@@ -187,14 +187,32 @@ export async function syncSheetsToAirtable(
     console.log(`[SheetsToAirtable] Fetching data from Google Sheets...`);
 
     let sheetsData: any[][] = [];
+    let sheetData: any;
+    let actualIdColumnIndex = idColumnIndex;
+
     try {
-      const sheetData = await retryWithBackoff(
+      sheetData = await retryWithBackoff(
         () => getSheetData(sheetsAccessToken, spreadsheetId, sheetId),
         maxRetries,
         'fetch Sheets data'
       );
 
       sheetsData = sheetData.values || [];
+
+      // CRITICAL: ALWAYS use a fixed far-right column for IDs to avoid shifting user's visible columns
+      // We use column AA (index 26) by default - far enough that it won't interfere with typical data
+      // This column will be hidden, so users won't see it, and it won't affect their A-Z column layout
+      // This applies to EVERY sync, regardless of whether data exists or not
+      if (idColumnIndex === 0) {
+        const FIXED_ID_COLUMN_INDEX = 26; // Column AA (A=0, B=1, ..., Z=25, AA=26)
+        actualIdColumnIndex = FIXED_ID_COLUMN_INDEX;
+
+        const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+
+        console.log(
+          `[SheetsToAirtable] Using fixed column ${columnLetter} (index ${actualIdColumnIndex}) for record IDs (will be hidden)`
+        );
+      }
 
       // Skip header row if configured
       if (skipHeaderRow && sheetsData.length > 0) {
@@ -227,6 +245,7 @@ export async function syncSheetsToAirtable(
 
     let tableFields: AirtableField[] = [];
     let primaryFieldId: string = '';
+    let primaryFieldName: string | undefined;
 
     try {
       const schema = await retryWithBackoff(
@@ -242,6 +261,13 @@ export async function syncSheetsToAirtable(
 
       tableFields = table.fields;
       primaryFieldId = table.primaryFieldId;
+
+      // Get primary field name for smart matching
+      const primaryField = tableFields.find((f) => f.id === primaryFieldId);
+      if (primaryField) {
+        primaryFieldName = primaryField.name;
+        console.log(`[SheetsToAirtable] Primary field for matching: "${primaryFieldName}"`);
+      }
 
       // Filter out read-only fields
       const writableFields = tableFields.filter((f) => !isReadOnlyField(f.type));
@@ -307,7 +333,7 @@ export async function syncSheetsToAirtable(
       const rowNumber = i + (skipHeaderRow ? 2 : 1); // Account for header and 1-based indexing
 
       // Extract record ID from ID column
-      const recordId = row[idColumnIndex] ? String(row[idColumnIndex]).trim() : undefined;
+      const recordId = row[actualIdColumnIndex] ? String(row[actualIdColumnIndex]).trim() : undefined;
 
       // Skip completely empty rows
       if (isRowEmpty(row)) {
@@ -316,16 +342,28 @@ export async function syncSheetsToAirtable(
       }
 
       try {
-        // Remove ID column from data before transformation
-        const dataRow = [...row];
-        dataRow.splice(idColumnIndex, 1);
-
-        // Transform to Airtable fields
-        const transformed = await sheetsRowToAirtableFields(dataRow, tableFields, {
-          accessToken: airtableAccessToken,
-          baseId,
-          tableId,
-        });
+        // Transform to Airtable fields using field mappings
+        // If we have field mappings, extract values from the correct columns
+        // Otherwise, use positional mapping (after removing ID column)
+        const transformed = fieldMappings && Object.keys(fieldMappings).length > 0
+          ? await sheetsRowToAirtableFieldsWithMapping(row, tableFields, fieldMappings, actualIdColumnIndex, {
+              accessToken: airtableAccessToken,
+              baseId,
+              tableId,
+            })
+          : await sheetsRowToAirtableFields(
+              (() => {
+                const dataRow = [...row];
+                dataRow.splice(actualIdColumnIndex, 1);
+                return dataRow;
+              })(),
+              tableFields,
+              {
+                accessToken: airtableAccessToken,
+                baseId,
+                tableId,
+              }
+            );
 
         // Handle linked record resolution
         if (shouldResolveLinkedRecords) {
@@ -473,7 +511,7 @@ export async function syncSheetsToAirtable(
     // ========================================================================
     console.log(`[SheetsToAirtable] Calculating changes...`);
 
-    const diff = calculateRecordDiff(validRows, existingRecords, deleteExtraRecords);
+    const diff = calculateRecordDiff(validRows, existingRecords, deleteExtraRecords, primaryFieldName);
 
     console.log(
       `[SheetsToAirtable] Changes: ${diff.toCreate.length} to create, ${diff.toUpdate.length} to update, ${diff.toDelete.length} to delete`
@@ -484,10 +522,13 @@ export async function syncSheetsToAirtable(
     // ========================================================================
 
     // 7.1: Create new records (in batches of 10)
+    const newRecordIdUpdates: Array<{ row: number; recordId: string }> = [];
+
     if (diff.toCreate.length > 0) {
       console.log(`[SheetsToAirtable] Creating ${diff.toCreate.length} new records...`);
 
       const createBatches = batchOperations(diff.toCreate, effectiveBatchSize);
+      let createdSoFar = 0;
 
       for (let i = 0; i < createBatches.length; i++) {
         const batch = createBatches[i];
@@ -499,6 +540,19 @@ export async function syncSheetsToAirtable(
             `create records batch ${i + 1}/${createBatches.length}`
           );
 
+          // Track which rows got which record IDs so we can write them back to Sheets
+          for (let j = 0; j < created.length; j++) {
+            const createdRecord = created[j];
+            const originalRowIndex = validRows.filter(r => !r.recordId)[createdSoFar + j]?.rowIndex;
+
+            if (originalRowIndex !== undefined && createdRecord.id) {
+              // Store the row number (accounting for header) and the new record ID
+              const sheetRowNumber = originalRowIndex + (skipHeaderRow ? 2 : 1);
+              newRecordIdUpdates.push({ row: sheetRowNumber, recordId: createdRecord.id });
+            }
+          }
+
+          createdSoFar += created.length;
           result.added += created.length;
           console.log(
             `[SheetsToAirtable] Created batch ${i + 1}/${createBatches.length} (${created.length} records)`
@@ -589,6 +643,96 @@ export async function syncSheetsToAirtable(
     }
 
     // ========================================================================
+    // STEP 7.4: Write new record IDs back to Google Sheets
+    // ========================================================================
+    // CRITICAL: This prevents duplicate records on subsequent syncs
+    if (newRecordIdUpdates.length > 0) {
+      console.log(
+        `[SheetsToAirtable] Writing ${newRecordIdUpdates.length} new record IDs back to Sheets...`
+      );
+
+      try {
+        const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+
+        // STEP 1: Ensure column AA (index 26) exists before writing to it
+        // This prevents errors when the sheet only has columns A-Z (0-25)
+        const requiredColumnCount = actualIdColumnIndex + 1; // Need at least this many columns (index 26 = 27 columns total)
+        console.log(
+          `[SheetsToAirtable] Ensuring column ${columnLetter} exists (need ${requiredColumnCount} columns)...`
+        );
+        await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
+
+        // STEP 2: Write record IDs to column AA
+        // Sort by row number to ensure correct order
+        newRecordIdUpdates.sort((a, b) => a.row - b.row);
+
+        // Update each row's ID column with the new Airtable record ID
+        // We'll batch these updates for efficiency
+        const updatePromises: Promise<any>[] = [];
+
+        for (const update of newRecordIdUpdates) {
+          // Convert row number to A1 notation for the ID column
+          const range = `${columnLetter}${update.row}`;
+
+          updatePromises.push(
+            updateSheetData(
+              sheetsAccessToken,
+              spreadsheetId,
+              sheetId,
+              range,
+              [[update.recordId]]
+            ).catch((error) => {
+              // Log error but don't fail the entire sync
+              result.warnings.push(
+                `Failed to write record ID ${update.recordId} to row ${update.row}: ${error instanceof Error ? error.message : String(error)}`
+              );
+              console.warn(
+                `[SheetsToAirtable] Failed to write ID for row ${update.row}:`,
+                error
+              );
+            })
+          );
+
+          // Batch updates in groups of 10 to avoid rate limits
+          if (updatePromises.length >= 10) {
+            await Promise.all(updatePromises);
+            updatePromises.length = 0;
+            // Small delay to respect rate limits
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+        }
+
+        // Process remaining updates
+        if (updatePromises.length > 0) {
+          await Promise.all(updatePromises);
+        }
+
+        console.log(
+          `[SheetsToAirtable] ✓ Successfully wrote ${newRecordIdUpdates.length} record IDs to column ${columnLetter}`
+        );
+
+        // STEP 3: Hide column AA to keep sheets clean for users
+        try {
+          await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
+          console.log(
+            `[SheetsToAirtable] ✓ Hidden column ${columnLetter} (users won't see record IDs)`
+          );
+        } catch (error) {
+          // Non-fatal - log warning
+          result.warnings.push(
+            `Could not auto-hide ID column: ${error instanceof Error ? error.message : String(error)}`
+          );
+          console.warn('[SheetsToAirtable] Failed to hide ID column:', error);
+        }
+      } catch (error) {
+        // Non-fatal error - log warning but don't fail the sync
+        const warningMsg = `Failed to write some record IDs back to Sheets: ${error instanceof Error ? error.message : String(error)}. You may experience duplicate records on next sync.`;
+        result.warnings.push(warningMsg);
+        console.error('[SheetsToAirtable] Error writing IDs back to Sheets:', error);
+      }
+    }
+
+    // ========================================================================
     // STEP 8: Finalize
     // ========================================================================
 
@@ -614,11 +758,19 @@ export async function syncSheetsToAirtable(
 
 /**
  * Calculates the difference between Sheets data and existing Airtable records
+ *
+ * Smart Matching Strategy:
+ * 1. If row has a record ID (from previous sync) → Match by ID (exact match)
+ * 2. If no ID, try to match by primary field value (e.g., Name, Email)
+ * 3. If still no match → Create new record
+ *
+ * This allows first-time syncs to work without IDs while preventing duplicates
  */
 function calculateRecordDiff(
   transformedRows: TransformedRow[],
   existingRecords: AirtableRecord[],
-  deleteExtra: boolean
+  deleteExtra: boolean,
+  primaryFieldName?: string
 ): RecordDiff {
   const diff: RecordDiff = {
     toCreate: [],
@@ -627,10 +779,24 @@ function calculateRecordDiff(
     rowToRecordMap: new Map(),
   };
 
-  // Build map of existing records
+  // Build map of existing records by ID
   const existingRecordsMap = new Map<string, AirtableRecord>(
     existingRecords.map((r) => [r.id, r])
   );
+
+  // Build map of existing records by primary field (for smart matching)
+  const existingRecordsByPrimaryField = new Map<string, AirtableRecord>();
+  if (primaryFieldName) {
+    for (const record of existingRecords) {
+      const primaryValue = record.fields[primaryFieldName];
+      if (primaryValue) {
+        const normalizedValue = String(primaryValue).trim().toLowerCase();
+        if (normalizedValue) {
+          existingRecordsByPrimaryField.set(normalizedValue, record);
+        }
+      }
+    }
+  }
 
   // Track which existing records are still in Sheets
   const processedRecordIds = new Set<string>();
@@ -639,19 +805,37 @@ function calculateRecordDiff(
   for (const row of transformedRows) {
     if (!row.isValid) continue;
 
-    if (row.recordId && existingRecordsMap.has(row.recordId)) {
-      // Record exists - check if it needs updating
-      const existingRecord = existingRecordsMap.get(row.recordId)!;
-      processedRecordIds.add(row.recordId);
+    let matchedRecord: AirtableRecord | undefined;
 
-      if (hasRecordChanged(row.fields, existingRecord.fields)) {
+    // Strategy 1: Match by record ID (if available)
+    if (row.recordId && existingRecordsMap.has(row.recordId)) {
+      matchedRecord = existingRecordsMap.get(row.recordId)!;
+    }
+    // Strategy 2: Match by primary field (fallback when no ID)
+    else if (!row.recordId && primaryFieldName && row.fields[primaryFieldName]) {
+      const primaryValue = String(row.fields[primaryFieldName]).trim().toLowerCase();
+      if (primaryValue) {
+        matchedRecord = existingRecordsByPrimaryField.get(primaryValue);
+        if (matchedRecord) {
+          console.log(
+            `[SheetsToAirtable] Matched row ${row.rowIndex} to existing record ${matchedRecord.id} by primary field "${primaryFieldName}"`
+          );
+        }
+      }
+    }
+
+    if (matchedRecord) {
+      // Record exists (either by ID or primary field match) - check if it needs updating
+      processedRecordIds.add(matchedRecord.id);
+
+      if (hasRecordChanged(row.fields, matchedRecord.fields)) {
         diff.toUpdate.push({
-          id: row.recordId,
+          id: matchedRecord.id,
           fields: row.fields,
         });
       }
 
-      diff.rowToRecordMap.set(row.rowIndex, row.recordId);
+      diff.rowToRecordMap.set(row.rowIndex, matchedRecord.id);
     } else {
       // New record - create it
       // Remove empty fields to avoid validation errors

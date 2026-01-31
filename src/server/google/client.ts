@@ -618,3 +618,163 @@ export function columnNumberToLetter(column: number): string {
   }
   return result;
 }
+
+/**
+ * Detects the last column index with data in a sheet
+ * @param sheetData - The sheet data from getSheetData
+ * @returns The zero-based index of the last column with data (0 = A, 1 = B, etc.)
+ */
+export function detectLastColumnIndex(sheetData: SheetData): number {
+  if (!sheetData.values || sheetData.values.length === 0) {
+    return 0;
+  }
+
+  let maxColumns = 0;
+  for (const row of sheetData.values) {
+    if (row.length > maxColumns) {
+      maxColumns = row.length;
+    }
+  }
+
+  return Math.max(0, maxColumns - 1); // Zero-based index
+}
+
+/**
+ * Ensures a sheet has at least the specified number of columns
+ * Creates additional columns if needed
+ * @param accessToken - Google OAuth access token
+ * @param spreadsheetId - The spreadsheet ID
+ * @param sheetId - The sheet ID (gid) or name
+ * @param requiredColumnCount - Minimum number of columns needed (e.g., 27 for column AA)
+ */
+export async function ensureColumnsExist(
+  accessToken: string,
+  spreadsheetId: string,
+  sheetId: string | number,
+  requiredColumnCount: number
+): Promise<void> {
+  return fetchWithRetry(async () => {
+    // Get the numeric sheet ID and current column count
+    let numericSheetId: number;
+    let currentColumnCount: number;
+
+    const metadata = await getSpreadsheet(accessToken, spreadsheetId);
+
+    if (typeof sheetId === 'number') {
+      const sheet = metadata.sheets.find((s) => s.properties.sheetId === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet with ID ${sheetId} not found`);
+      }
+      numericSheetId = sheetId;
+      currentColumnCount = sheet.properties.gridProperties?.columnCount || 0;
+    } else {
+      const sheet = metadata.sheets.find((s) => s.properties.title === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet "${sheetId}" not found`);
+      }
+      numericSheetId = sheet.properties.sheetId;
+      currentColumnCount = sheet.properties.gridProperties?.columnCount || 0;
+    }
+
+    // If we already have enough columns, do nothing
+    if (currentColumnCount >= requiredColumnCount) {
+      return;
+    }
+
+    // Calculate how many columns to add
+    const columnsToAdd = requiredColumnCount - currentColumnCount;
+
+    // Use appendDimension to add columns
+    const response = await fetch(
+      `${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              appendDimension: {
+                sheetId: numericSheetId,
+                dimension: 'COLUMNS',
+                length: columnsToAdd,
+              },
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new GoogleSheetsError(`Failed to add columns: ${error}`);
+    }
+  });
+}
+
+/**
+ * Hides a column in a Google Sheet
+ * @param accessToken - Google OAuth access token
+ * @param spreadsheetId - The spreadsheet ID
+ * @param sheetId - The sheet ID (gid) or name
+ * @param columnIndex - Zero-based column index to hide (0 = A, 1 = B, etc.)
+ */
+export async function hideColumn(
+  accessToken: string,
+  spreadsheetId: string,
+  sheetId: string | number,
+  columnIndex: number
+): Promise<void> {
+  return fetchWithRetry(async () => {
+    // Get the numeric sheet ID
+    let numericSheetId: number;
+
+    if (typeof sheetId === 'number') {
+      numericSheetId = sheetId;
+    } else {
+      const metadata = await getSpreadsheet(accessToken, spreadsheetId);
+      const sheet = metadata.sheets.find((s) => s.properties.title === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet "${sheetId}" not found`);
+      }
+      numericSheetId = sheet.properties.sheetId;
+    }
+
+    // Use batchUpdate to hide the column
+    const response = await fetch(
+      `${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              updateDimensionProperties: {
+                range: {
+                  sheetId: numericSheetId,
+                  dimension: 'COLUMNS',
+                  startIndex: columnIndex,
+                  endIndex: columnIndex + 1,
+                },
+                properties: {
+                  hiddenByUser: true,
+                },
+                fields: 'hiddenByUser',
+              },
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new GoogleSheetsError(`Failed to hide column: ${error}`);
+    }
+  });
+}

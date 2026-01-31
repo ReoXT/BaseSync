@@ -71,8 +71,10 @@ export async function airtableToSheets(
       case 'multilineText':
       case 'richText':
       case 'email':
+      case 'emailAddress': // Alternative email field type
       case 'url':
       case 'phoneNumber':
+      case 'phone': // Alternative phone field type
         result.value = String(value);
         break;
 
@@ -303,8 +305,10 @@ export async function sheetsToAirtable(
       case 'multilineText':
       case 'richText':
       case 'email':
+      case 'emailAddress': // Alternative email field type
       case 'url':
       case 'phoneNumber':
+      case 'phone': // Alternative phone field type
         result.value = stringValue;
         break;
 
@@ -360,8 +364,10 @@ export async function sheetsToAirtable(
           if (matchingChoice) {
             result.value = matchingChoice.name;
           } else {
+            // Check if this looks like it might be wrong field mapping
+            const fieldName = context.airtableField?.name || 'this field';
             result.errors?.push(
-              `Value "${stringValue}" is not a valid choice. Available: ${choices.map((c) => c.name).join(', ')}`
+              `Value "${stringValue}" is not a valid choice for ${fieldName}. Available options: ${choices.map((c) => c.name).join(', ')}. Check your field mappings - this column may be mapped to the wrong Airtable field.`
             );
             result.value = null;
           }
@@ -451,20 +457,20 @@ export async function sheetsToAirtable(
         result.value = null;
         break;
 
-      // Unsupported write fields
+      // Unsupported write fields (treat as warnings, not errors)
       case 'multipleAttachments':
-        result.errors?.push('Attachment upload from Sheets is not supported in this version');
+        result.warnings?.push('Attachment upload from Sheets is not supported - field will be skipped');
         result.value = null;
         break;
 
       case 'singleCollaborator':
       case 'multipleCollaborators':
-        result.errors?.push('Collaborator assignment from Sheets is not supported in this version');
+        result.warnings?.push('Collaborator assignment from Sheets is not supported - field will be skipped');
         result.value = null;
         break;
 
       case 'barcode':
-        result.errors?.push('Barcode field type is not supported for import');
+        result.warnings?.push('Barcode field type is not supported - field will be skipped');
         result.value = null;
         break;
 
@@ -607,6 +613,61 @@ export async function sheetsRowToAirtableFields(
   for (let i = 0; i < fields.length && i < row.length; i++) {
     const field = fields[i];
     const value = row[i];
+    const conversionContext = { ...context, airtableField: field };
+    const result = await sheetsToAirtable(value, field.type, conversionContext);
+
+    // Only include the field if we have a value (skip read-only fields)
+    if (result.value !== null && result.value !== undefined) {
+      recordFields[field.name] = result.value;
+    }
+
+    if (result.errors?.length) {
+      errors.push(`${field.name}: ${result.errors.join(', ')}`);
+    }
+    if (result.warnings?.length) {
+      warnings.push(`${field.name}: ${result.warnings.join(', ')}`);
+    }
+  }
+
+  return { fields: recordFields, errors, warnings };
+}
+
+/**
+ * Converts a Sheets row to Airtable record fields using explicit field mappings
+ * This version uses the field mappings to extract values from the correct columns
+ *
+ * @param row - Complete row from Sheets (including ID column)
+ * @param fields - Airtable fields (already filtered and sorted by mapping)
+ * @param fieldMappings - Map of airtableFieldId -> columnIndex
+ * @param idColumnIndex - Which column contains the Airtable record ID
+ * @param context - Additional context for conversion
+ */
+export async function sheetsRowToAirtableFieldsWithMapping(
+  row: any[],
+  fields: AirtableField[],
+  fieldMappings: Record<string, number>,
+  idColumnIndex: number,
+  context?: FieldMappingContext
+): Promise<{
+  fields: Record<string, AirtableFieldValue>;
+  errors: string[];
+  warnings: string[];
+}> {
+  const recordFields: Record<string, AirtableFieldValue> = {};
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  for (const field of fields) {
+    const columnIndex = fieldMappings[field.id];
+
+    // Skip if no mapping for this field
+    if (columnIndex === undefined) {
+      continue;
+    }
+
+    // Get value from the mapped column
+    const value = row[columnIndex];
+
     const conversionContext = { ...context, airtableField: field };
     const result = await sheetsToAirtable(value, field.type, conversionContext);
 

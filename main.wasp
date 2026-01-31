@@ -488,6 +488,16 @@ action toggleSyncActive {
   entities: [User, SyncConfig]
 }
 
+action runConnectionDiagnostics {
+  fn: import { runConnectionDiagnostics } from "@src/server/actions/diagnostics",
+  entities: [User, AirtableConnection, GoogleSheetsConnection]
+}
+
+action clearReauthFlags {
+  fn: import { clearReauthFlags } from "@src/server/actions/diagnostics",
+  entities: [User, AirtableConnection, GoogleSheetsConnection]
+}
+
 query getUserSyncConfigs {
   fn: import { getUserSyncConfigs } from "@src/server/queries/syncConfig",
   entities: [User, SyncConfig]
