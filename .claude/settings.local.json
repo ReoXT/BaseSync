@@ -43,7 +43,8 @@
       "Bash(cd:*)",
       "Bash(wasp db --help:*)",
       "Bash(npx tsx:*)",
-      "Bash(source .env.server)"
+      "Bash(source .env.server)",
+      "Bash(npm run db:*)"
     ]
   }
 }

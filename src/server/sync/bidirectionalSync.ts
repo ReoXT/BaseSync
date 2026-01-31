@@ -492,6 +492,9 @@ export async function syncBidirectional(
       let updated = 0;
       const phaseErrors: SyncError[] = [];
 
+      // Track which rows need record IDs written to column AA
+      const rowsNeedingRecordIds: Array<{ rowNumber: number; recordId: string }> = [];
+
       for (const record of recordsToUpdate) {
         try {
           const { row } = await airtableRecordToSheetsRow(record, checkpoint.tableFields, {
@@ -500,54 +503,37 @@ export async function syncBidirectional(
             tableId,
           });
 
-          // Build row with record ID at column AA (actualIdColumnIndex), not column 0
-          // Create array with enough space for all columns including AA
-          const fullRow = [...row];
-
-          // Pad array to ensure column AA exists
-          while (fullRow.length <= actualIdColumnIndex) {
-            fullRow.push('');
-          }
-
-          // Set record ID at column AA
-          fullRow[actualIdColumnIndex] = record.id;
-
-          // Add sync timestamp if configured
-          if (syncTimestampColumnIndex !== undefined) {
-            // Ensure array is long enough for timestamp column
-            while (fullRow.length <= syncTimestampColumnIndex) {
-              fullRow.push('');
-            }
-            fullRow[syncTimestampColumnIndex] = new Date().toISOString();
-          }
-
           // Find if row exists in Sheets
           const existingRowIndex = checkpoint.sheetsRows.findIndex(
             (r) => r[actualIdColumnIndex] === record.id
           );
 
           if (existingRowIndex >= 0) {
-            // Update existing row
+            // Update existing row with just the data (no record ID in the array)
             const rowNumber = existingRowIndex + (includeHeader ? 2 : 1);
             await retryWithBackoff(
               () =>
                 updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, `A${rowNumber}`, [
-                  fullRow,
+                  row,
                 ]),
               maxRetries,
               `update row ${rowNumber}`,
               { recordId: record.id, phase: 'airtableToSheets' }
             );
             updated++;
+            rowsNeedingRecordIds.push({ rowNumber, recordId: record.id });
           } else {
-            // Append new row
+            // Append new row with just the data (no record ID in the array)
             await retryWithBackoff(
-              () => appendRows(sheetsAccessToken, spreadsheetId, sheetId, [fullRow]),
+              () => appendRows(sheetsAccessToken, spreadsheetId, sheetId, [row]),
               maxRetries,
               `append row for ${record.id}`,
               { recordId: record.id, phase: 'airtableToSheets' }
             );
             added++;
+            // Calculate row number for newly appended row
+            const newRowNumber = checkpoint.sheetsRows.length + added + (includeHeader ? 1 : 0);
+            rowsNeedingRecordIds.push({ rowNumber: newRowNumber, recordId: record.id });
           }
         } catch (error) {
           // Log error but continue with other records
@@ -582,7 +568,7 @@ export async function syncBidirectional(
         );
       }
 
-      // After syncing Airtable → Sheets, ensure column AA exists and is hidden
+      // After syncing Airtable → Sheets, write record IDs to column AA and hide it
       if ((added > 0 || updated > 0) && !dryRun) {
         try {
           const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
@@ -595,14 +581,31 @@ export async function syncBidirectional(
           );
           await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
 
-          // STEP 2: Hide column AA to keep sheets clean for users
+          // STEP 2: Write record IDs to column AA
+          console.log(
+            `[Phase 4: Airtable → Sheets] Writing ${rowsNeedingRecordIds.length} record IDs to column ${columnLetter}...`
+          );
+          for (const { rowNumber, recordId } of rowsNeedingRecordIds) {
+            const range = `${columnLetter}${rowNumber}`;
+            try {
+              await updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, range, [[recordId]]);
+            } catch (error) {
+              console.warn(
+                `[Phase 4: Airtable → Sheets] Failed to write record ID to ${range}:`,
+                error
+              );
+            }
+          }
+          console.log(`[Phase 4: Airtable → Sheets] ✓ Wrote record IDs to column ${columnLetter}`);
+
+          // STEP 3: Hide column AA to keep sheets clean for users
           console.log(`[Phase 4: Airtable → Sheets] Hiding ID column ${columnLetter}...`);
           await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
           console.log(
             `[Phase 4: Airtable → Sheets] ✓ Hidden column ${columnLetter} (users won't see record IDs)`
           );
         } catch (error) {
-          console.warn('[Phase 4: Airtable → Sheets] Failed to ensure/hide ID column:', error);
+          console.warn('[Phase 4: Airtable → Sheets] Failed to write/hide ID column:', error);
         }
       }
 

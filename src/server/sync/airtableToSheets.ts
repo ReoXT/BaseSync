@@ -248,6 +248,7 @@ export async function syncAirtableToSheets(
     console.log(`[AirtableToSheets] Transforming records to Sheets rows...`);
 
     const transformedRows: any[][] = [];
+    const transformedRowsWithoutIds: any[][] = []; // Rows without record IDs for writing
     const recordIdMapping: Map<number, string> = new Map(); // rowIndex -> recordId
 
     for (let i = 0; i < airtableRecords.length; i++) {
@@ -264,19 +265,16 @@ export async function syncAirtableToSheets(
           }
         );
 
-        // Place record ID in the designated column (column AA by default)
-        // We need to pad the row to ensure it has enough columns
-        const fullRow = [...row];
-
-        // Ensure the row has enough elements to place the ID at actualIdColumnIndex
-        while (fullRow.length <= actualIdColumnIndex) {
-          fullRow.push(''); // Pad with empty strings
+        // Create row WITH record ID at column AA for diff calculation
+        const rowWithId = [...row];
+        while (rowWithId.length <= actualIdColumnIndex) {
+          rowWithId.push('');
         }
+        rowWithId[actualIdColumnIndex] = record.id;
+        transformedRows.push(rowWithId);
 
-        // Insert the record ID at the correct column index
-        fullRow[actualIdColumnIndex] = record.id;
-
-        transformedRows.push(fullRow);
+        // Keep row WITHOUT record ID for actual writing to sheets
+        transformedRowsWithoutIds.push(row);
         recordIdMapping.set(i, record.id);
 
         if (errors.length > 0) {
@@ -327,39 +325,60 @@ export async function syncAirtableToSheets(
     }
 
     // ========================================================================
-    // STEP 6: Calculate Diff (Add/Update/Delete)
+    // STEP 6: Prepare Data for Writing (Preserve SHEETS Order, Update Airtable Changes)
     // ========================================================================
-    console.log(`[AirtableToSheets] Calculating changes...`);
+    console.log(`[AirtableToSheets] Preparing ${transformedRowsWithoutIds.length} rows to write...`);
 
-    const diff = calculateRowDiff(
-      transformedRows,
-      existingData.values || [],
-      idColumnIndex,
-      headerRowOffset,
-      deleteExtraRows
-    );
+    // CRITICAL: Preserve the EXISTING order in Sheets to maintain consistency
+    // Instead of replacing everything, we:
+    // 1. Update rows that exist in both (matched by record ID)
+    // 2. Append new rows at the end
+    // 3. Keep existing rows in their current positions
 
-    console.log(
-      `[AirtableToSheets] Changes: ${diff.toAdd.length} to add, ${diff.toUpdate.length} to update, ${diff.toDelete.length} to delete`
-    );
+    const startRow = includeHeader ? 2 : 1; // Row 2 if header exists, Row 1 otherwise
 
-    // ========================================================================
-    // STEP 7: Apply Changes to Sheets
-    // ========================================================================
-
-    // Get numeric sheet ID if needed
-    let numericSheetId: number | undefined;
-    if (typeof sheetId === 'string') {
-      try {
-        numericSheetId = await getSheetIdByName(sheetsAccessToken, spreadsheetId, sheetId);
-      } catch (error) {
-        result.warnings.push(
-          `Could not get numeric sheet ID: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    } else {
-      numericSheetId = sheetId;
+    // Build a map of Airtable record ID → data
+    const airtableDataMap = new Map<string, any[]>();
+    for (let i = 0; i < airtableRecords.length; i++) {
+      const record = airtableRecords[i];
+      const rowData = transformedRowsWithoutIds[i];
+      airtableDataMap.set(record.id, rowData);
     }
+
+    // Build order based on EXISTING Sheets data
+    const orderedUpdates: Array<{ rowNumber: number; data: any[]; recordId: string }> = [];
+    const newRecordsToAppend: Array<{ data: any[]; recordId: string }> = [];
+
+    // Process existing Sheets rows to maintain their order
+    if (existingData.values && existingData.values.length > headerRowOffset) {
+      const dataRows = existingData.values.slice(headerRowOffset);
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        const recordId = row[actualIdColumnIndex] ? String(row[actualIdColumnIndex]).trim() : undefined;
+
+        if (recordId && airtableDataMap.has(recordId)) {
+          // This row exists in both - preserve its position and update data
+          const rowNumber = i + startRow;
+          const newData = airtableDataMap.get(recordId)!;
+          orderedUpdates.push({ rowNumber, data: newData, recordId });
+
+          // Mark as processed
+          airtableDataMap.delete(recordId);
+        }
+      }
+    }
+
+    // Remaining records in airtableDataMap are NEW - append them at the end
+    for (const [recordId, data] of airtableDataMap) {
+      newRecordsToAppend.push({ data, recordId });
+    }
+
+    console.log(`[AirtableToSheets] Will update ${orderedUpdates.length} existing rows, append ${newRecordsToAppend.length} new rows`);
+
+    // ========================================================================
+    // STEP 7: Write Updates to Sheets (Preserving Existing Order)
+    // ========================================================================
 
     // 7.1: Add header row if needed
     if (includeHeader && (!existingData.values || existingData.values.length === 0)) {
@@ -367,20 +386,23 @@ export async function syncAirtableToSheets(
 
       const headerRow = tableFields.map((f) => f.name);
 
-      // Add "Record ID" header at the correct column position (column AA if default)
-      // Pad the array to ensure column AA exists
-      while (headerRow.length <= actualIdColumnIndex) {
-        headerRow.push('');
-      }
-      headerRow[actualIdColumnIndex] = 'Record ID';
-
       try {
+        // Write the main header row (field names) to A1
         await retryWithBackoff(
           () =>
             updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, 'A1', [headerRow]),
           maxRetries,
           'add header row'
         );
+
+        // Write "Record ID" header to column AA separately
+        if (actualIdColumnIndex === FIXED_ID_COLUMN_INDEX) {
+          const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
+          const headerRange = `${columnLetter}1`;
+          await updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, headerRange, [['Record ID']]);
+          console.log(`[AirtableToSheets] Added "Record ID" header to ${headerRange}`);
+        }
+
         headerRowOffset = 1;
       } catch (error) {
         result.errors.push({
@@ -391,128 +413,122 @@ export async function syncAirtableToSheets(
       }
     }
 
-    // 7.2: Add new rows (in batches)
-    if (diff.toAdd.length > 0) {
-      console.log(`[AirtableToSheets] Adding ${diff.toAdd.length} new rows...`);
+    // 7.2: Update existing rows (preserving their positions)
+    if (orderedUpdates.length > 0) {
+      console.log(`[AirtableToSheets] Updating ${orderedUpdates.length} existing rows...`);
 
-      const addBatches = chunkArray(diff.toAdd, batchSize);
+      for (const update of orderedUpdates) {
+        try {
+          const range = `A${update.rowNumber}`;
+          await retryWithBackoff(
+            () => updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, range, [update.data]),
+            maxRetries,
+            `update row ${update.rowNumber}`
+          );
 
-      for (let i = 0; i < addBatches.length; i++) {
-        const batch = addBatches[i];
+          result.updated++;
+          recordIdMapping.set(update.rowNumber - startRow, update.recordId);
+        } catch (error) {
+          result.errors.push({
+            type: 'WRITE',
+            recordId: update.recordId,
+            rowIndex: update.rowNumber,
+            message: `Failed to update row ${update.rowNumber}: ${error instanceof Error ? error.message : String(error)}`,
+            originalError: error,
+          });
+        }
+      }
+
+      console.log(`[AirtableToSheets] ✓ Updated ${result.updated} rows`);
+    }
+
+    // 7.3: Append new rows at the end
+    if (newRecordsToAppend.length > 0) {
+      console.log(`[AirtableToSheets] Appending ${newRecordsToAppend.length} new rows...`);
+
+      const writeBatches = chunkArray(newRecordsToAppend, batchSize);
+      let appendedSoFar = 0;
+
+      // Calculate where new rows will start
+      const existingRowCount = existingData.values?.length || headerRowOffset;
+
+      for (let i = 0; i < writeBatches.length; i++) {
+        const batch = writeBatches[i];
+        const batchData = batch.map(r => r.data);
 
         try {
           await retryWithBackoff(
-            () => appendRows(sheetsAccessToken, spreadsheetId, sheetId, batch),
+            () => appendRows(sheetsAccessToken, spreadsheetId, sheetId, batchData),
             maxRetries,
-            `add rows batch ${i + 1}/${addBatches.length}`
+            `append rows batch ${i + 1}/${writeBatches.length}`
           );
 
+          // Track record IDs for newly appended rows
+          for (let j = 0; j < batch.length; j++) {
+            // Row number in the sheet (1-based, accounting for header)
+            const rowNumber = existingRowCount + appendedSoFar + j + 1;
+            // Index for the mapping (0-based, relative to data start)
+            const mapIndex = existingRowCount - headerRowOffset + appendedSoFar + j;
+            recordIdMapping.set(mapIndex, batch[j].recordId);
+          }
+
+          appendedSoFar += batch.length;
           result.added += batch.length;
           console.log(
-            `[AirtableToSheets] Added batch ${i + 1}/${addBatches.length} (${batch.length} rows)`
+            `[AirtableToSheets] Appended batch ${i + 1}/${writeBatches.length} (${batch.length} rows)`
           );
         } catch (error) {
           result.errors.push({
             type: 'WRITE',
-            message: `Failed to add rows batch ${i + 1}: ${error instanceof Error ? error.message : String(error)}`,
-            originalError: error,
-          });
-        }
-      }
-    }
-
-    // 7.3: Update existing rows (in batches)
-    if (diff.toUpdate.length > 0) {
-      console.log(`[AirtableToSheets] Updating ${diff.toUpdate.length} rows...`);
-
-      const updateBatches = chunkArray(diff.toUpdate, batchSize);
-
-      for (let i = 0; i < updateBatches.length; i++) {
-        const batch = updateBatches[i];
-
-        for (const update of batch) {
-          try {
-            // Calculate A1 notation range for this row
-            const rowNumber = update.rowIndex + headerRowOffset + 1; // +1 for 1-based indexing
-            const range = `A${rowNumber}`;
-
-            await retryWithBackoff(
-              () =>
-                updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, range, [
-                  update.data,
-                ]),
-              maxRetries,
-              `update row ${rowNumber}`
-            );
-
-            result.updated++;
-          } catch (error) {
-            result.errors.push({
-              rowIndex: update.rowIndex,
-              type: 'WRITE',
-              message: `Failed to update row ${update.rowIndex}: ${error instanceof Error ? error.message : String(error)}`,
-              originalError: error,
-            });
-          }
-        }
-
-        console.log(
-          `[AirtableToSheets] Updated batch ${i + 1}/${updateBatches.length} (${batch.length} rows)`
-        );
-      }
-    }
-
-    // 7.4: Delete extra rows (if enabled)
-    if (diff.toDelete.length > 0 && deleteExtraRows && numericSheetId !== undefined) {
-      console.log(`[AirtableToSheets] Deleting ${diff.toDelete.length} extra rows...`);
-
-      // Sort in descending order to delete from bottom up (prevents index shifting)
-      const sortedDeletes = [...diff.toDelete].sort((a, b) => b - a);
-
-      // Group consecutive rows for efficient deletion
-      const deleteRanges = groupConsecutiveNumbers(sortedDeletes);
-
-      for (const range of deleteRanges) {
-        try {
-          const startRow = range.start + headerRowOffset;
-          const count = range.end - range.start + 1;
-
-          await retryWithBackoff(
-            () => deleteRows(sheetsAccessToken, spreadsheetId, numericSheetId!, startRow, count),
-            maxRetries,
-            `delete rows ${startRow}-${startRow + count - 1}`
-          );
-
-          result.deleted += count;
-        } catch (error) {
-          result.errors.push({
-            type: 'WRITE',
-            message: `Failed to delete rows ${range.start}-${range.end}: ${error instanceof Error ? error.message : String(error)}`,
+            message: `Failed to append rows batch ${i + 1}: ${error instanceof Error ? error.message : String(error)}`,
             originalError: error,
           });
         }
       }
 
-      console.log(`[AirtableToSheets] Deleted ${result.deleted} rows`);
+      console.log(`[AirtableToSheets] ✓ Appended ${result.added} new rows`);
     }
 
     // ========================================================================
-    // STEP 8: Ensure Column AA Exists and Hide It
+    // STEP 8: Write Record IDs to Column AA, Then Hide It
     // ========================================================================
 
-    // Auto-hide the ID column (column AA) to keep sheets clean for users
+    // Write record IDs to column AA and hide it to keep sheets clean for users
     if (actualIdColumnIndex === FIXED_ID_COLUMN_INDEX && (result.added > 0 || result.updated > 0)) {
       const columnLetter = columnNumberToLetter(actualIdColumnIndex + 1);
       try {
-        // STEP 1: Ensure column AA exists before trying to hide it
-        // This prevents the "column doesn't exist" error when trying to hide column 26 (AA)
+        // STEP 1: Ensure column AA exists
         const requiredColumnCount = actualIdColumnIndex + 1; // Need at least 27 columns for column AA (index 26)
         console.log(
           `[AirtableToSheets] Ensuring column ${columnLetter} exists (need ${requiredColumnCount} columns)...`
         );
         await ensureColumnsExist(sheetsAccessToken, spreadsheetId, sheetId, requiredColumnCount);
 
-        // STEP 2: Hide column AA
+        // STEP 2: Write all record IDs to column AA
+        console.log(`[AirtableToSheets] Writing ${recordIdMapping.size} record IDs to column ${columnLetter}...`);
+
+        for (const [rowIndex, recordId] of recordIdMapping) {
+          const rowNumber = rowIndex + headerRowOffset + 1; // +1 for 1-based indexing
+          const range = `${columnLetter}${rowNumber}`;
+
+          try {
+            await updateSheetData(
+              sheetsAccessToken,
+              spreadsheetId,
+              sheetId,
+              range,
+              [[recordId]]
+            );
+          } catch (error) {
+            result.warnings.push(
+              `Failed to write record ID to ${range}: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+
+        console.log(`[AirtableToSheets] ✓ Wrote ${recordIdMapping.size} record IDs to column ${columnLetter}`);
+
+        // STEP 3: Hide column AA
         console.log(`[AirtableToSheets] Hiding ID column ${columnLetter}...`);
         await hideColumn(sheetsAccessToken, spreadsheetId, sheetId, actualIdColumnIndex);
         console.log(
@@ -521,9 +537,9 @@ export async function syncAirtableToSheets(
       } catch (error) {
         // Non-fatal - log warning
         result.warnings.push(
-          `Could not auto-hide ID column: ${error instanceof Error ? error.message : String(error)}`
+          `Could not write/hide ID column: ${error instanceof Error ? error.message : String(error)}`
         );
-        console.warn('[AirtableToSheets] Failed to hide ID column:', error);
+        console.warn('[AirtableToSheets] Failed to write/hide ID column:', error);
       }
     }
 
