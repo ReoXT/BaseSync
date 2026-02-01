@@ -25,6 +25,7 @@ export interface ReviewStepData {
   airtableBaseName?: string;
   airtableTableId?: string;
   airtableTableName?: string;
+  airtableViewId?: string;
   googleSpreadsheetId?: string;
   googleSpreadsheetName?: string;
   googleSheetId?: string;
@@ -123,6 +124,7 @@ export function ReviewStep({ formData }: ReviewStepProps) {
         airtableBaseName: formData.airtableBaseName,
         airtableTableId: formData.airtableTableId,
         airtableTableName: formData.airtableTableName,
+        airtableViewId: formData.airtableViewId,
         googleSpreadsheetId: formData.googleSpreadsheetId,
         googleSpreadsheetName: formData.googleSpreadsheetName,
         googleSheetId: formData.googleSheetId,

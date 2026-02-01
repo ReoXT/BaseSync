@@ -209,6 +209,7 @@ model SyncConfig {
   airtableBaseId            String
   airtableTableId           String
   airtableTableName         String?         // Cached for display purposes
+  airtableViewId            String?         // Optional: View ID for preserving exact row order from Airtable UI
 
   // Google Sheets source/target
   googleSpreadsheetId       String

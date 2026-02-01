@@ -49,6 +49,8 @@ export interface BidirectionalSyncOptions {
   baseId: string;
   /** Airtable table ID or name */
   tableId: string;
+  /** Airtable view ID or name (optional, for exact row order) */
+  viewId?: string;
   /** Google Sheets spreadsheet ID */
   spreadsheetId: string;
   /** Google Sheet ID (name or gid) */
@@ -222,6 +224,7 @@ export async function syncBidirectional(
     sheetsAccessToken,
     baseId,
     tableId,
+    viewId, // CRITICAL: Extract viewId for Airtable record ordering
     spreadsheetId,
     sheetId,
     conflictResolution,
@@ -258,16 +261,7 @@ export async function syncBidirectional(
     const fetchPhase = await executePhase('fetch', async () => {
       console.log(`[Phase 1: Fetch] Fetching current state from Airtable and Sheets...`);
 
-      // 1.1: Fetch Airtable records
-      console.log(`[Phase 1: Fetch] Fetching Airtable records...`);
-      checkpoint.airtableRecords = await retryWithBackoff(
-        () => listRecords(airtableAccessToken, baseId, tableId),
-        maxRetries,
-        'fetch Airtable records'
-      );
-      console.log(`[Phase 1: Fetch] ✓ Fetched ${checkpoint.airtableRecords.length} Airtable records`);
-
-      // 1.2: Fetch table schema
+      // 1.1: Fetch table schema FIRST (needed for primary field fallback ordering)
       console.log(`[Phase 1: Fetch] Fetching table schema...`);
       const schema = await retryWithBackoff(
         () => getBaseSchema(airtableAccessToken, baseId),
@@ -288,6 +282,35 @@ export async function syncBidirectional(
         checkpoint.primaryFieldName = primaryField.name;
         console.log(`[Phase 1: Fetch] Primary field for matching: "${checkpoint.primaryFieldName}"`);
       }
+
+      // 1.2: Fetch Airtable records
+      // CRITICAL: Use viewId if provided to ensure records are fetched in the exact order
+      // shown in Airtable's UI. Without this, records come in an arbitrary order which
+      // causes the data in Sheets to be in a different order than Airtable.
+      console.log(`[Phase 1: Fetch] Fetching Airtable records...`);
+
+      // Build fetch options for consistent ordering
+      // Priority: 1) View (exact UI order), 2) Primary field sort (alphabetical), 3) Default
+      const listRecordsOptions: { view?: string; sort?: Array<{ field: string; direction: 'asc' | 'desc' }> } = {};
+
+      if (viewId) {
+        // Use view for EXACT order matching Airtable UI
+        listRecordsOptions.view = viewId;
+        console.log(`[Phase 1: Fetch] Using view "${viewId}" for exact row ordering`);
+      } else if (checkpoint.primaryFieldName) {
+        // Fallback to sorting by primary field for consistent alphabetical order
+        listRecordsOptions.sort = [{ field: checkpoint.primaryFieldName, direction: 'asc' }];
+        console.log(`[Phase 1: Fetch] Sorting by primary field "${checkpoint.primaryFieldName}" for consistent order`);
+      } else {
+        console.warn(`[Phase 1: Fetch] No view or primary field - order may be unpredictable`);
+      }
+
+      checkpoint.airtableRecords = await retryWithBackoff(
+        () => listRecords(airtableAccessToken, baseId, tableId, listRecordsOptions),
+        maxRetries,
+        'fetch Airtable records'
+      );
+      console.log(`[Phase 1: Fetch] ✓ Fetched ${checkpoint.airtableRecords.length} Airtable records`);
 
       // Apply field mappings if provided
       if (fieldMappings && Object.keys(fieldMappings).length > 0) {
@@ -628,12 +651,26 @@ export async function syncBidirectional(
       }
 
       // Determine which rows to sync from Sheets
-      const rowsToSync = new Set<number>([
-        ...checkpoint.conflictResults.sheetsOnlyChanges.map((id) =>
-          checkpoint.sheetsRows.findIndex((r) => r[actualIdColumnIndex] === id)
-        ),
-        ...checkpoint.conflictResults.newInSheets,
-      ]);
+      const rowsToSync = new Set<number>();
+
+      // Add rows that changed only in Sheets
+      for (const id of checkpoint.conflictResults.sheetsOnlyChanges) {
+        const rowIndex = checkpoint.sheetsRows.findIndex((r) => r[actualIdColumnIndex] === id);
+        if (rowIndex >= 0) {
+          rowsToSync.add(rowIndex);
+        }
+      }
+
+      // Add new rows in Sheets
+      // CRITICAL FIX: newInSheets can contain:
+      // 1. Row indices (when rows don't have record IDs)
+      // 2. Parsed from `row_X` identifiers
+      for (const item of checkpoint.conflictResults.newInSheets) {
+        // If it's a valid row index, use it directly
+        if (typeof item === 'number' && item >= 0 && item < checkpoint.sheetsRows.length) {
+          rowsToSync.add(item);
+        }
+      }
 
       // Add conflict resolutions that favor Sheets
       if (checkpoint.conflictResolutions) {
@@ -921,7 +958,14 @@ export async function syncBidirectional(
       }
 
       // Re-fetch current state to update sync checkpoint
-      const updatedRecords = await listRecords(airtableAccessToken, baseId, tableId);
+      // CRITICAL: Use viewId or primary field to maintain consistent ordering for state tracking
+      const stateListOptions: { view?: string; sort?: Array<{ field: string; direction: 'asc' | 'desc' }> } = {};
+      if (viewId) {
+        stateListOptions.view = viewId;
+      } else if (checkpoint.primaryFieldName) {
+        stateListOptions.sort = [{ field: checkpoint.primaryFieldName, direction: 'asc' }];
+      }
+      const updatedRecords = await listRecords(airtableAccessToken, baseId, tableId, stateListOptions);
       const updatedSheetData = await getSheetData(sheetsAccessToken, spreadsheetId, sheetId);
       const updatedRows = (updatedSheetData.values || []).slice(includeHeader ? 1 : 0);
 

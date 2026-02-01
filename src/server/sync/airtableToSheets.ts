@@ -14,10 +14,16 @@ import {
   hideColumn,
   columnNumberToLetter,
   ensureColumnsExist,
+  batchSetDropdownValidations,
   type SheetData,
 } from '../google/client';
 import { airtableRecordToSheetsRow } from './fieldMapper';
 import { resolveAllLinkedRecords } from './linkedRecordResolver';
+import {
+  detectDropdownFields,
+  convertToSheetsValidation,
+  logDropdownFields,
+} from './dropdownFieldDetector';
 
 // ============================================================================
 // Types
@@ -32,6 +38,8 @@ export interface AirtableToSheetsSyncOptions {
   baseId: string;
   /** Airtable table ID or name */
   tableId: string;
+  /** Airtable view ID or name (optional, for exact row order) */
+  viewId?: string;
   /** Google Sheets spreadsheet ID */
   spreadsheetId: string;
   /** Google Sheet ID (name or gid) */
@@ -134,11 +142,11 @@ export async function syncAirtableToSheets(
     sheetsAccessToken,
     baseId,
     tableId,
+    viewId, // Optional view ID for exact row order
     spreadsheetId,
     sheetId,
     fieldMappings,
     includeHeader = true,
-    deleteExtraRows = false,
     resolveLinkedRecords: shouldResolveLinkedRecords = true,
     idColumnIndex = 0,
     maxRetries = 3,
@@ -151,35 +159,12 @@ export async function syncAirtableToSheets(
 
   try {
     // ========================================================================
-    // STEP 1: Fetch Airtable Records
-    // ========================================================================
-    console.log(`[AirtableToSheets] Fetching records from Airtable table ${tableId}...`);
-
-    let airtableRecords: AirtableRecord[] = [];
-    try {
-      airtableRecords = await retryWithBackoff(
-        () => listRecords(airtableAccessToken, baseId, tableId),
-        maxRetries,
-        'fetch Airtable records'
-      );
-      console.log(`[AirtableToSheets] Fetched ${airtableRecords.length} records from Airtable`);
-    } catch (error) {
-      result.errors.push({
-        type: 'FETCH',
-        message: `Failed to fetch Airtable records: ${error instanceof Error ? error.message : String(error)}`,
-        originalError: error,
-      });
-      return finalizeSyncResult(result, startTime);
-    }
-
-    result.total = airtableRecords.length;
-
-    // ========================================================================
-    // STEP 2: Fetch Table Schema
+    // STEP 1: Fetch Table Schema FIRST (needed for primary field name)
     // ========================================================================
     console.log(`[AirtableToSheets] Fetching table schema...`);
 
     let tableFields: AirtableField[] = [];
+    let primaryFieldName: string | undefined;
     try {
       const schema = await retryWithBackoff(
         () => getBaseSchema(airtableAccessToken, baseId),
@@ -193,6 +178,13 @@ export async function syncAirtableToSheets(
       }
 
       tableFields = table.fields;
+
+      // Get primary field name for sorting (ensures consistent order)
+      const primaryField = table.fields.find((f) => f.id === table.primaryFieldId);
+      if (primaryField) {
+        primaryFieldName = primaryField.name;
+        console.log(`[AirtableToSheets] Primary field for ordering: "${primaryFieldName}"`);
+      }
 
       // Apply field mappings if provided (filter to only mapped fields)
       if (fieldMappings && Object.keys(fieldMappings).length > 0) {
@@ -211,6 +203,46 @@ export async function syncAirtableToSheets(
       });
       return finalizeSyncResult(result, startTime);
     }
+
+    // ========================================================================
+    // STEP 2: Fetch Airtable Records (SORTED BY PRIMARY FIELD for consistent order)
+    // ========================================================================
+    console.log(`[AirtableToSheets] Fetching records from Airtable table ${tableId}...`);
+
+    let airtableRecords: AirtableRecord[] = [];
+    try {
+      // CRITICAL: Use view or sort by primary field to ensure consistent ordering
+      // Priority: 1) View (exact UI order), 2) Primary field sort (alphabetical), 3) Default
+      const fetchOptions: any = {};
+
+      if (viewId) {
+        // Use view for EXACT order matching Airtable UI
+        fetchOptions.view = viewId;
+        console.log(`[AirtableToSheets] Using Airtable view "${viewId}" for exact row order`);
+      } else if (primaryFieldName) {
+        // Fallback to sorting by primary field for consistent alphabetical order
+        fetchOptions.sort = [{ field: primaryFieldName, direction: 'asc' as const }];
+        console.log(`[AirtableToSheets] Sorting by primary field "${primaryFieldName}" for consistent order`);
+      } else {
+        console.warn(`[AirtableToSheets] No view or primary field - order may be unpredictable`);
+      }
+
+      airtableRecords = await retryWithBackoff(
+        () => listRecords(airtableAccessToken, baseId, tableId, fetchOptions),
+        maxRetries,
+        'fetch Airtable records'
+      );
+      console.log(`[AirtableToSheets] Fetched ${airtableRecords.length} records from Airtable`);
+    } catch (error) {
+      result.errors.push({
+        type: 'FETCH',
+        message: `Failed to fetch Airtable records: ${error instanceof Error ? error.message : String(error)}`,
+        originalError: error,
+      });
+      return finalizeSyncResult(result, startTime);
+    }
+
+    result.total = airtableRecords.length;
 
     // ========================================================================
     // STEP 3: Resolve Linked Records (Optional)
@@ -325,59 +357,48 @@ export async function syncAirtableToSheets(
     }
 
     // ========================================================================
-    // STEP 6: Prepare Data for Writing (Preserve SHEETS Order, Update Airtable Changes)
+    // STEP 6: Prepare Data for Writing (PRESERVE AIRTABLE ORDER)
     // ========================================================================
     console.log(`[AirtableToSheets] Preparing ${transformedRowsWithoutIds.length} rows to write...`);
 
-    // CRITICAL: Preserve the EXISTING order in Sheets to maintain consistency
-    // Instead of replacing everything, we:
-    // 1. Update rows that exist in both (matched by record ID)
-    // 2. Append new rows at the end
-    // 3. Keep existing rows in their current positions
+    // CRITICAL FIX: To preserve Airtable's exact ordering in Sheets, we MUST write
+    // all data in Airtable's order. The previous approach of "update existing + append new"
+    // loses ordering because:
+    // 1. Existing rows stay in their (possibly wrong) Sheet positions
+    // 2. New rows get appended at the end in unpredictable order
+    //
+    // The solution: Write ALL rows in Airtable order, starting from row 2 (after header).
+    // This ensures Sheets always mirrors Airtable's exact ordering.
 
     const startRow = includeHeader ? 2 : 1; // Row 2 if header exists, Row 1 otherwise
 
-    // Build a map of Airtable record ID → data
-    const airtableDataMap = new Map<string, any[]>();
-    for (let i = 0; i < airtableRecords.length; i++) {
-      const record = airtableRecords[i];
-      const rowData = transformedRowsWithoutIds[i];
-      airtableDataMap.set(record.id, rowData);
-    }
-
-    // Build order based on EXISTING Sheets data
-    const orderedUpdates: Array<{ rowNumber: number; data: any[]; recordId: string }> = [];
-    const newRecordsToAppend: Array<{ data: any[]; recordId: string }> = [];
-
-    // Process existing Sheets rows to maintain their order
+    // Build a Set of existing record IDs in Sheets (for tracking adds vs updates)
+    const existingRecordIds = new Set<string>();
     if (existingData.values && existingData.values.length > headerRowOffset) {
       const dataRows = existingData.values.slice(headerRowOffset);
-
-      for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i];
+      for (const row of dataRows) {
         const recordId = row[actualIdColumnIndex] ? String(row[actualIdColumnIndex]).trim() : undefined;
-
-        if (recordId && airtableDataMap.has(recordId)) {
-          // This row exists in both - preserve its position and update data
-          const rowNumber = i + startRow;
-          const newData = airtableDataMap.get(recordId)!;
-          orderedUpdates.push({ rowNumber, data: newData, recordId });
-
-          // Mark as processed
-          airtableDataMap.delete(recordId);
+        if (recordId) {
+          existingRecordIds.add(recordId);
         }
       }
     }
 
-    // Remaining records in airtableDataMap are NEW - append them at the end
-    for (const [recordId, data] of airtableDataMap) {
-      newRecordsToAppend.push({ data, recordId });
+    // Prepare all rows in AIRTABLE ORDER - this is the key to preserving order
+    const allRowsInOrder: Array<{ data: any[]; recordId: string; isNew: boolean }> = [];
+    for (let i = 0; i < airtableRecords.length; i++) {
+      const record = airtableRecords[i];
+      const rowData = transformedRowsWithoutIds[i];
+      const isNew = !existingRecordIds.has(record.id);
+      allRowsInOrder.push({ data: rowData, recordId: record.id, isNew });
     }
 
-    console.log(`[AirtableToSheets] Will update ${orderedUpdates.length} existing rows, append ${newRecordsToAppend.length} new rows`);
+    const newCount = allRowsInOrder.filter(r => r.isNew).length;
+    const updateCount = allRowsInOrder.filter(r => !r.isNew).length;
+    console.log(`[AirtableToSheets] Will write ${allRowsInOrder.length} rows in Airtable order (${newCount} new, ${updateCount} existing)`);
 
     // ========================================================================
-    // STEP 7: Write Updates to Sheets (Preserving Existing Order)
+    // STEP 7: Write ALL Data to Sheets in Airtable Order
     // ========================================================================
 
     // 7.1: Add header row if needed
@@ -413,84 +434,99 @@ export async function syncAirtableToSheets(
       }
     }
 
-    // 7.2: Update existing rows (preserving their positions)
-    if (orderedUpdates.length > 0) {
-      console.log(`[AirtableToSheets] Updating ${orderedUpdates.length} existing rows...`);
+    // 7.2: Write all rows in Airtable order (batched for efficiency)
+    if (allRowsInOrder.length > 0) {
+      console.log(`[AirtableToSheets] Writing ${allRowsInOrder.length} rows in Airtable order...`);
 
-      for (const update of orderedUpdates) {
-        try {
-          const range = `A${update.rowNumber}`;
-          await retryWithBackoff(
-            () => updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, range, [update.data]),
-            maxRetries,
-            `update row ${update.rowNumber}`
-          );
-
-          result.updated++;
-          recordIdMapping.set(update.rowNumber - startRow, update.recordId);
-        } catch (error) {
-          result.errors.push({
-            type: 'WRITE',
-            recordId: update.recordId,
-            rowIndex: update.rowNumber,
-            message: `Failed to update row ${update.rowNumber}: ${error instanceof Error ? error.message : String(error)}`,
-            originalError: error,
-          });
-        }
-      }
-
-      console.log(`[AirtableToSheets] ✓ Updated ${result.updated} rows`);
-    }
-
-    // 7.3: Append new rows at the end
-    if (newRecordsToAppend.length > 0) {
-      console.log(`[AirtableToSheets] Appending ${newRecordsToAppend.length} new rows...`);
-
-      const writeBatches = chunkArray(newRecordsToAppend, batchSize);
-      let appendedSoFar = 0;
-
-      // Calculate where new rows will start
-      const existingRowCount = existingData.values?.length || headerRowOffset;
+      // Write in batches for efficiency
+      const writeBatches = chunkArray(allRowsInOrder, batchSize);
+      let writtenSoFar = 0;
 
       for (let i = 0; i < writeBatches.length; i++) {
         const batch = writeBatches[i];
         const batchData = batch.map(r => r.data);
+        const batchStartRow = startRow + writtenSoFar;
 
         try {
+          // Write the batch starting at the correct row
+          const range = `A${batchStartRow}`;
           await retryWithBackoff(
-            () => appendRows(sheetsAccessToken, spreadsheetId, sheetId, batchData),
+            () => updateSheetData(sheetsAccessToken, spreadsheetId, sheetId, range, batchData),
             maxRetries,
-            `append rows batch ${i + 1}/${writeBatches.length}`
+            `write rows batch ${i + 1}/${writeBatches.length}`
           );
 
-          // Track record IDs for newly appended rows
+          // Track results and record ID mappings
           for (let j = 0; j < batch.length; j++) {
-            // Row number in the sheet (1-based, accounting for header)
-            const rowNumber = existingRowCount + appendedSoFar + j + 1;
-            // Index for the mapping (0-based, relative to data start)
-            const mapIndex = existingRowCount - headerRowOffset + appendedSoFar + j;
-            recordIdMapping.set(mapIndex, batch[j].recordId);
+            const rowInfo = batch[j];
+            if (rowInfo.isNew) {
+              result.added++;
+            } else {
+              result.updated++;
+            }
+            // Map row index to record ID (0-based index relative to data start)
+            recordIdMapping.set(writtenSoFar + j, rowInfo.recordId);
           }
 
-          appendedSoFar += batch.length;
-          result.added += batch.length;
+          writtenSoFar += batch.length;
           console.log(
-            `[AirtableToSheets] Appended batch ${i + 1}/${writeBatches.length} (${batch.length} rows)`
+            `[AirtableToSheets] Wrote batch ${i + 1}/${writeBatches.length} (${batch.length} rows)`
           );
         } catch (error) {
           result.errors.push({
             type: 'WRITE',
-            message: `Failed to append rows batch ${i + 1}: ${error instanceof Error ? error.message : String(error)}`,
+            message: `Failed to write rows batch ${i + 1}: ${error instanceof Error ? error.message : String(error)}`,
             originalError: error,
           });
         }
       }
 
-      console.log(`[AirtableToSheets] ✓ Appended ${result.added} new rows`);
+      console.log(`[AirtableToSheets] ✓ Wrote ${result.added} new + ${result.updated} updated rows in Airtable order`);
     }
 
     // ========================================================================
-    // STEP 8: Write Record IDs to Column AA, Then Hide It
+    // STEP 8: Setup Dropdown Data Validation for Select Fields
+    // ========================================================================
+
+    // Detect dropdown fields (Single Select, Multi Select) and set up Google Sheets data validation
+    console.log(`[AirtableToSheets] Detecting dropdown fields for data validation...`);
+    console.log(`[AirtableToSheets] Total fields to check: ${tableFields.length}`);
+    console.log(`[AirtableToSheets] Field types: ${tableFields.map(f => `${f.name}:${f.type}`).join(', ')}`);
+
+    const dropdownFields = detectDropdownFields(tableFields, fieldMappings);
+
+    if (dropdownFields.length > 0) {
+      logDropdownFields(dropdownFields);
+
+      try {
+        // Convert to Sheets validation format
+        const validations = dropdownFields.map(convertToSheetsValidation);
+
+        console.log(`[AirtableToSheets] Validation configurations:`, JSON.stringify(validations, null, 2));
+
+        // Apply data validation to all dropdown columns
+        console.log(`[AirtableToSheets] Applying data validation to ${validations.length} dropdown column(s)...`);
+        await batchSetDropdownValidations(
+          sheetsAccessToken,
+          spreadsheetId,
+          sheetId,
+          validations
+        );
+        console.log(`[AirtableToSheets] ✓ Data validation applied successfully`);
+      } catch (error) {
+        // Non-fatal error - log warning but continue
+        const errorMessage = `Failed to set up dropdown validation: ${error instanceof Error ? error.message : String(error)}`;
+        result.warnings.push(errorMessage);
+        console.error('[AirtableToSheets] Failed to set up dropdown validation:', error);
+        console.error('[AirtableToSheets] Error details:', error instanceof Error ? error.stack : error);
+      }
+    } else {
+      console.log(`[AirtableToSheets] No dropdown fields detected - skipping data validation`);
+      console.log(`[AirtableToSheets] This might mean: 1) No singleSelect/multipleSelects fields, 2) No choices defined, or 3) All dropdown fields were filtered out`);
+    }
+
+    // ========================================================================
+    // STEP 9: Write Record IDs to Column AA, Then Hide It
     // ========================================================================
 
     // Write record IDs to column AA and hide it to keep sheets clean for users
@@ -544,7 +580,7 @@ export async function syncAirtableToSheets(
     }
 
     // ========================================================================
-    // STEP 9: Finalize
+    // STEP 10: Finalize
     // ========================================================================
 
     console.log(

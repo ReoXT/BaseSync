@@ -44,7 +44,25 @@
       "Bash(wasp db --help:*)",
       "Bash(npx tsx:*)",
       "Bash(source .env.server)",
-      "Bash(npm run db:*)"
+      "Bash(npm run db:*)",
+      "Bash(xargs kill:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker volume:*)",
+      "Bash(docker stop:*)",
+      "Bash(sudo rm -rf node_modules)",
+      "Bash(wasp version)",
+      "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync/.wasp/out/server && npm run bundle:*)",
+      "Bash(npm run test:sync:*)",
+      "Bash(git stash:*)",
+      "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync/.wasp/out/server && npx rollup --config:*)",
+      "Bash(wasp start --help:*)",
+      "Bash(npm run bundle:*)",
+      "Bash(npm run tsc:*)",
+      "Bash(tsc:*)",
+      "Bash(npx rollup:*)",
+      "Bash(killall:*)",
+      "Bash(./scripts/patch-rollup-config.sh:*)"
     ]
   }
 }

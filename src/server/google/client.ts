@@ -778,3 +778,215 @@ export async function hideColumn(
     }
   });
 }
+
+/**
+ * Interface for dropdown validation options
+ */
+export interface DropdownValidationOptions {
+  /** Column index to apply validation (0-based, 0 = A, 1 = B, etc.) */
+  columnIndex: number;
+  /** List of dropdown choices */
+  choices: string[];
+  /** Starting row for validation (1-based, typically 2 to skip header) */
+  startRow?: number;
+  /** Ending row for validation (if not specified, applies to entire column) */
+  endRow?: number;
+  /** Whether to show dropdown in cell (default: true) */
+  showDropdown?: boolean;
+  /** Whether to reject invalid input (default: true) */
+  strict?: boolean;
+}
+
+/**
+ * Sets up data validation (dropdown) for a column in Google Sheets
+ * This matches Airtable's dropdown behavior for Single Select and Multi Select fields
+ *
+ * @param accessToken - Google OAuth access token
+ * @param spreadsheetId - The spreadsheet ID
+ * @param sheetId - The sheet ID (gid) or name
+ * @param options - Dropdown validation configuration
+ */
+export async function setColumnDropdownValidation(
+  accessToken: string,
+  spreadsheetId: string,
+  sheetId: string | number,
+  options: DropdownValidationOptions
+): Promise<void> {
+  return fetchWithRetry(async () => {
+    // Get the numeric sheet ID
+    let numericSheetId: number;
+    let rowCount = 1000; // Default fallback
+
+    const metadata = await getSpreadsheet(accessToken, spreadsheetId);
+
+    if (typeof sheetId === 'number') {
+      const sheet = metadata.sheets.find((s) => s.properties.sheetId === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet with ID ${sheetId} not found`);
+      }
+      numericSheetId = sheetId;
+      rowCount = sheet.properties.gridProperties?.rowCount || 1000;
+    } else {
+      const sheet = metadata.sheets.find((s) => s.properties.title === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet "${sheetId}" not found`);
+      }
+      numericSheetId = sheet.properties.sheetId;
+      rowCount = sheet.properties.gridProperties?.rowCount || 1000;
+    }
+
+    const {
+      columnIndex,
+      choices,
+      startRow = 2, // Default: skip header row
+      endRow = rowCount,
+      showDropdown = true,
+      strict = true,
+    } = options;
+
+    // Build the data validation rule
+    // For multi-select, we'll use ONE_OF_LIST which allows users to enter comma-separated values
+    const response = await fetch(
+      `${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              setDataValidation: {
+                range: {
+                  sheetId: numericSheetId,
+                  startRowIndex: startRow - 1, // Convert to 0-based
+                  endRowIndex: endRow,
+                  startColumnIndex: columnIndex,
+                  endColumnIndex: columnIndex + 1,
+                },
+                rule: {
+                  condition: {
+                    type: 'ONE_OF_LIST',
+                    values: choices.map((choice) => ({ userEnteredValue: choice })),
+                  },
+                  showCustomUi: showDropdown,
+                  strict: strict,
+                },
+              },
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new GoogleSheetsError(`Failed to set dropdown validation: ${error}`);
+    }
+  });
+}
+
+/**
+ * Batch sets dropdown validations for multiple columns
+ * More efficient than calling setColumnDropdownValidation multiple times
+ *
+ * @param accessToken - Google OAuth access token
+ * @param spreadsheetId - The spreadsheet ID
+ * @param sheetId - The sheet ID (gid) or name
+ * @param validations - Array of dropdown validation configurations
+ */
+export async function batchSetDropdownValidations(
+  accessToken: string,
+  spreadsheetId: string,
+  sheetId: string | number,
+  validations: DropdownValidationOptions[]
+): Promise<void> {
+  if (validations.length === 0) return;
+
+  return fetchWithRetry(async () => {
+    // Get the numeric sheet ID and row count
+    let numericSheetId: number;
+    let rowCount = 1000;
+
+    const metadata = await getSpreadsheet(accessToken, spreadsheetId);
+
+    if (typeof sheetId === 'number') {
+      const sheet = metadata.sheets.find((s) => s.properties.sheetId === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet with ID ${sheetId} not found`);
+      }
+      numericSheetId = sheetId;
+      rowCount = sheet.properties.gridProperties?.rowCount || 1000;
+    } else {
+      const sheet = metadata.sheets.find((s) => s.properties.title === sheetId);
+      if (!sheet) {
+        throw new GoogleSheetsError(`Sheet "${sheetId}" not found`);
+      }
+      numericSheetId = sheet.properties.sheetId;
+      rowCount = sheet.properties.gridProperties?.rowCount || 1000;
+    }
+
+    // Build all validation requests
+    const requests = validations.map((validation) => {
+      const {
+        columnIndex,
+        choices,
+        startRow = 2,
+        endRow = rowCount,
+        showDropdown = true,
+        strict = true,
+      } = validation;
+
+      const columnLetter = columnNumberToLetter(columnIndex + 1);
+      console.log(
+        `[GoogleSheets] Setting validation for column ${columnLetter} (index ${columnIndex}): ${choices.length} choices, ${strict ? 'strict' : 'lenient'}`
+      );
+
+      return {
+        setDataValidation: {
+          range: {
+            sheetId: numericSheetId,
+            startRowIndex: startRow - 1,
+            endRowIndex: endRow,
+            startColumnIndex: columnIndex,
+            endColumnIndex: columnIndex + 1,
+          },
+          rule: {
+            condition: {
+              type: 'ONE_OF_LIST',
+              values: choices.map((choice) => ({ userEnteredValue: choice })),
+            },
+            showCustomUi: showDropdown,
+            strict: strict,
+          },
+        },
+      };
+    });
+
+    console.log(`[GoogleSheets] Sending ${requests.length} validation request(s) to Sheets API...`);
+    console.log(`[GoogleSheets] Sheet ID: ${numericSheetId}, Row count: ${rowCount}`);
+
+    // Send batch request
+    const response = await fetch(
+      `${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requests }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GoogleSheets] API Error Response:`, errorText);
+      throw new GoogleSheetsError(`Failed to batch set dropdown validations: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`[GoogleSheets] ✓ Validation API call successful:`, result);
+  });
+}

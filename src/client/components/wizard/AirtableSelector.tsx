@@ -1,8 +1,9 @@
-import { AlertCircle, Database, Loader2, Table } from "lucide-react";
+import { AlertCircle, Database, Eye, Loader2, Table } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listUserAirtableBases, getAirtableTableSchema, getAirtableBaseTables, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
@@ -11,6 +12,7 @@ export interface AirtableSelectionData {
   baseName?: string;
   tableId?: string;
   tableName?: string;
+  viewId?: string;
 }
 
 export interface AirtableSelectorProps {
@@ -55,6 +57,7 @@ interface AirtableField {
 export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   const [selectedBaseId, setSelectedBaseId] = useState<string | undefined>(value.baseId);
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>(value.tableId);
+  const [viewId, setViewId] = useState<string | undefined>(value.viewId);
   const [tableSchema, setTableSchema] = useState<AirtableTableWithFields | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
@@ -123,6 +126,7 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
         baseName: bases?.find((b: AirtableBase) => b.id === selectedBaseId)?.name,
         tableId,
         tableName,
+        viewId,
       });
     } catch (error) {
       console.error("Failed to fetch table schema:", error);
@@ -131,6 +135,18 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
     } finally {
       setIsLoadingSchema(false);
     }
+  };
+
+  // Handle view ID change
+  const handleViewIdChange = (newViewId: string) => {
+    setViewId(newViewId);
+    onChange({
+      baseId: selectedBaseId,
+      baseName: bases?.find((b: AirtableBase) => b.id === selectedBaseId)?.name,
+      tableId: selectedTableId,
+      tableName: tables?.find((t: AirtableTable) => t.id === selectedTableId)?.name,
+      viewId: newViewId || undefined,
+    });
   };
 
   // Format field type for display
@@ -301,6 +317,45 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
               </AlertDescription>
             </Alert>
           )}
+        </div>
+      )}
+
+      {/* View ID Input (Optional) */}
+      {selectedTableId && (
+        <div className="space-y-3 animate-fade-in">
+          <Label htmlFor="airtable-view-id" className="text-sm font-medium flex items-center gap-2">
+            <div className="w-1 h-4 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+            View ID (Optional)
+          </Label>
+          <div className="space-y-2">
+            <div className="relative group">
+              <Input
+                id="airtable-view-id"
+                type="text"
+                placeholder="viw... (optional - for exact row order)"
+                value={viewId || ""}
+                onChange={(e) => handleViewIdChange(e.target.value)}
+                className="h-12 border-purple-500/20 hover:border-purple-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-purple-500/10 pl-12"
+              />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center pointer-events-none">
+                <Eye className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            <Alert className="border-purple-500/30 bg-purple-500/5">
+              <Eye className="h-4 w-4 text-purple-400" />
+              <AlertDescription className="text-xs text-muted-foreground">
+                <strong className="text-purple-400">Pro tip:</strong> Add your Airtable view ID (starts with "viw") to sync records in the exact order they appear in your view.
+                Find it in your Airtable URL: <code className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono text-xs">https://airtable.com/.../viw...</code>
+                {!viewId && <span className="block mt-1">Leave blank to sort alphabetically by the primary field.</span>}
+              </AlertDescription>
+            </Alert>
+            {viewId && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 w-fit">
+                <Eye className="h-3 w-3 text-purple-400" />
+                <span className="text-xs font-mono text-foreground">{viewId}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

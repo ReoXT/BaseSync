@@ -191,14 +191,6 @@ export async function syncSheetsToAirtable(
     let actualIdColumnIndex = idColumnIndex;
 
     try {
-      sheetData = await retryWithBackoff(
-        () => getSheetData(sheetsAccessToken, spreadsheetId, sheetId),
-        maxRetries,
-        'fetch Sheets data'
-      );
-
-      sheetsData = sheetData.values || [];
-
       // CRITICAL: ALWAYS use a fixed far-right column for IDs to avoid shifting user's visible columns
       // We use column AA (index 26) by default - far enough that it won't interfere with typical data
       // This column will be hidden, so users won't see it, and it won't affect their A-Z column layout
@@ -213,6 +205,19 @@ export async function syncSheetsToAirtable(
           `[SheetsToAirtable] Using fixed column ${columnLetter} (index ${actualIdColumnIndex}) for record IDs (will be hidden)`
         );
       }
+
+      // CRITICAL FIX: Fetch data up to column AA explicitly to ensure ID column is included
+      // Without this, Google Sheets API might not return trailing empty columns
+      const fetchRange = `A:${columnNumberToLetter(actualIdColumnIndex + 1)}`;
+      console.log(`[SheetsToAirtable] Fetching range: ${fetchRange} (includes ID column)`);
+
+      sheetData = await retryWithBackoff(
+        () => getSheetData(sheetsAccessToken, spreadsheetId, sheetId, fetchRange),
+        maxRetries,
+        'fetch Sheets data'
+      );
+
+      sheetsData = sheetData.values || [];
 
       // Skip header row if configured
       if (skipHeaderRow && sheetsData.length > 0) {
@@ -334,6 +339,8 @@ export async function syncSheetsToAirtable(
 
       // Extract record ID from ID column
       const recordId = row[actualIdColumnIndex] ? String(row[actualIdColumnIndex]).trim() : undefined;
+
+      console.log(`[SheetsToAirtable] Row ${i}: Column ${actualIdColumnIndex} value = "${row[actualIdColumnIndex]}" | Parsed ID = "${recordId}" | Row length = ${row.length}`);
 
       // Skip completely empty rows
       if (isRowEmpty(row)) {

@@ -436,15 +436,8 @@ export function getSyncPauseReason(user: User): string | null {
 // Email Notification Integration
 // ============================================================================
 
-// Re-export email notification functions for convenience
-export {
-  sendApproachingLimitEmail,
-  sendLimitReachedEmail,
-  sendTrialEndingSoonEmail,
-  sendSyncFailedEmail,
-  checkAndSendUsageEmails,
-  checkAndSendTrialExpiringEmails,
-} from '../emails/notificationSender';
+// NOTE: Email notification functions are imported dynamically in checkLimitsAndNotify
+// to avoid circular dependency issues with notificationSender.ts
 
 /**
  * Check limits and send appropriate email notifications
@@ -469,7 +462,6 @@ export async function checkLimitsAndNotify(
   emailsTriggered: boolean;
 }> {
   const { recordCount, currentSyncCount } = options;
-  const { checkAndSendUsageEmails } = await import('../emails/notificationSender');
 
   let recordLimitResult: UsageLimitCheckResult = { exceeded: false };
   let syncLimitResult: UsageLimitCheckResult = { exceeded: false };
@@ -486,7 +478,9 @@ export async function checkLimitsAndNotify(
   }
 
   // Send email notifications (non-blocking)
+  // Import dynamically to avoid circular dependency
   try {
+    const { checkAndSendUsageEmails } = await import('../emails/notificationSender');
     await checkAndSendUsageEmails(user, recordCount, currentSyncCount);
     emailsTriggered = true;
   } catch (error) {

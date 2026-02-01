@@ -337,11 +337,11 @@ export const triggerManualSync = async (
           sheetsAccessToken,
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
+          viewId: syncConfig.airtableViewId, // Use view for exact order
           spreadsheetId: syncConfig.googleSpreadsheetId,
           sheetId: syncConfig.googleSheetId,
           fieldMappings,
           includeHeader: true,
-          deleteExtraRows: false,
           resolveLinkedRecords: true,
           idColumnIndex: 0,
           maxRetries: 3,
@@ -408,6 +408,7 @@ export const triggerManualSync = async (
           sheetsAccessToken,
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
+          viewId: syncConfig.airtableViewId,
           spreadsheetId: syncConfig.googleSpreadsheetId,
           sheetId: syncConfig.googleSheetId,
           conflictResolution: syncConfig.conflictResolution as ConflictResolutionStrategy,
@@ -869,11 +870,11 @@ export const runInitialSync = async (
           sheetsAccessToken,
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
+          viewId: syncConfig.airtableViewId, // Use view for exact order
           spreadsheetId: syncConfig.googleSpreadsheetId,
           sheetId: syncConfig.googleSheetId,
           fieldMappings,
           includeHeader: true,
-          deleteExtraRows: true, // For initial sync, clean up extra rows
           resolveLinkedRecords: true,
           idColumnIndex: 0,
           maxRetries: 5, // More retries for large initial sync
@@ -940,6 +941,7 @@ export const runInitialSync = async (
           sheetsAccessToken,
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
+          viewId: syncConfig.airtableViewId,
           spreadsheetId: syncConfig.googleSpreadsheetId,
           sheetId: syncConfig.googleSheetId,
           conflictResolution: syncConfig.conflictResolution as ConflictResolutionStrategy,

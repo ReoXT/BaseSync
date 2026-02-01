@@ -241,6 +241,8 @@ export async function airtableToSheets(
   return result;
 }
 
+import { listRecords } from '../airtable/client';
+
 /**
  * Helper function to fetch linked record names from Airtable
  */
@@ -251,9 +253,6 @@ async function fetchLinkedRecordNames(
   linkedTableId: string
 ): Promise<string[]> {
   if (linkedRecords.length === 0) return [];
-
-  // Import here to avoid circular dependencies
-  const { listRecords } = await import('../airtable/client');
 
   // Fetch only the records we need using filterByFormula
   const recordIds = linkedRecords.map((r) => r.id);
@@ -531,9 +530,6 @@ async function fetchRecordIdsByNames(
   tableId: string
 ): Promise<string[]> {
   if (names.length === 0) return [];
-
-  // Import here to avoid circular dependencies
-  const { listRecords } = await import('../airtable/client');
 
   // Fetch records and filter by primary field
   // Note: This is a simplified approach. In production, you might want to:

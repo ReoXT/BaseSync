@@ -27,6 +27,7 @@ interface SyncFormData {
   airtableBaseName?: string;
   airtableTableId?: string;
   airtableTableName?: string;
+  airtableViewId?: string;
 
   // Step 2: Google Sheets selection
   googleSpreadsheetId?: string;
@@ -237,12 +238,14 @@ function AirtableSelectionStep({
           baseName: formData.airtableBaseName,
           tableId: formData.airtableTableId,
           tableName: formData.airtableTableName,
+          viewId: formData.airtableViewId,
         }}
         onChange={(data) => updateFormData({
           airtableBaseId: data.baseId,
           airtableBaseName: data.baseName,
           airtableTableId: data.tableId,
           airtableTableName: data.tableName,
+          airtableViewId: data.viewId,
         })}
       />
     </div>

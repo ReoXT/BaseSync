@@ -24,6 +24,7 @@ type CreateSyncConfigInput = {
   airtableBaseName?: string;
   airtableTableId: string;
   airtableTableName?: string;
+  airtableViewId?: string; // Optional: for exact row order matching
   googleSpreadsheetId: string;
   googleSpreadsheetName?: string;
   googleSheetId: string;
@@ -154,6 +155,7 @@ export const createSyncConfig: CreateSyncConfig<
         airtableBaseId: args.airtableBaseId,
         airtableTableId: args.airtableTableId,
         airtableTableName: args.airtableTableName,
+        airtableViewId: args.airtableViewId, // Store view ID for exact ordering
         googleSpreadsheetId: args.googleSpreadsheetId,
         googleSheetId: args.googleSheetId,
         googleSheetName: args.googleSheetName,

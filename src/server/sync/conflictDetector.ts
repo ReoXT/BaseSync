@@ -248,18 +248,24 @@ function normalizeFieldValue(value: any): any {
 
 /**
  * Captures the current state of Airtable records
+ * @param records - Airtable records to capture
+ *
+ * CRITICAL: Always hashes ALL fields in Airtable records, not just mapped fields.
+ * This ensures we detect changes to any field in Airtable, even if it's not mapped to Sheets.
  */
-export function captureAirtableState(records: AirtableRecord[]): RecordState[] {
+export function captureAirtableState(
+  records: AirtableRecord[]
+): RecordState[] {
   const now = Date.now();
 
   return records.map((record) => {
-    // Remove metadata fields that shouldn't affect hash
-    const { id, createdTime, ...fields } = record;
+    // Hash all fields to detect any changes
+    const fieldsToHash = record.fields;
 
     return {
       recordId: record.id,
-      contentHash: generateRecordHash(record.fields),
-      airtableModifiedTime: createdTime, // Airtable doesn't provide modifiedTime in base API
+      contentHash: generateRecordHash(fieldsToHash),
+      airtableModifiedTime: record.createdTime,
       capturedAt: now,
     };
   });
@@ -278,22 +284,40 @@ export function captureSheetsState(
   const states = new Map<string, RecordState>();
 
   rows.forEach((row, rowIndex) => {
-    // If we have an ID column, use it; otherwise use row index as identifier
-    const recordId = idColumnIndex !== undefined ? row[idColumnIndex] : `row_${rowIndex}`;
+    // CRITICAL FIX: If row doesn't have a record ID yet (first sync), use row index as identifier
+    // This allows initial bidirectional sync to work when Sheets has data but no record IDs
+    const hasRecordId = idColumnIndex !== undefined && row[idColumnIndex] && String(row[idColumnIndex]).trim() !== '';
+    const recordId = hasRecordId
+      ? String(row[idColumnIndex]).trim()
+      : `row_${rowIndex}`;
 
-    if (!recordId || recordId === '') {
-      return; // Skip rows without IDs
+    // Skip completely empty rows
+    if (isRowEmpty(row)) {
+      return;
     }
 
-    states.set(String(recordId), {
-      recordId: String(recordId),
-      contentHash: generateRowHash(row),
+    // CRITICAL: Exclude ID column from hash to avoid false-positive change detection
+    // The ID column is metadata for sync tracking, not user data
+    const rowDataOnly = idColumnIndex !== undefined
+      ? row.filter((_, idx) => idx !== idColumnIndex)
+      : row;
+
+    states.set(recordId, {
+      recordId: recordId,
+      contentHash: generateRowHash(rowDataOnly),
       sheetsModifiedTime: new Date().toISOString(), // Sheets doesn't provide cell-level timestamps
       capturedAt: now,
     });
   });
 
   return states;
+}
+
+/**
+ * Checks if a row is completely empty
+ */
+function isRowEmpty(row: any[]): boolean {
+  return row.every((cell) => cell === null || cell === undefined || String(cell).trim() === '');
 }
 
 // ============================================================================
@@ -328,17 +352,63 @@ export function detectConflicts(
   const lastState = stateManager.getState(syncConfigId);
 
   // Capture current states
+  // CRITICAL: Airtable state now includes ALL fields (not filtered by mappings)
+  // This ensures we detect changes to any Airtable field, even unmapped ones
   const currentAirtableStates = new Map(
     captureAirtableState(airtableRecords).map((s) => [s.recordId, s])
   );
   const currentSheetsStates = captureSheetsState(sheetsRows, idColumnIndex);
 
+  // DEBUG: Log state for troubleshooting
+  console.log(`[ConflictDetector] ========== DEBUG INFO ==========`);
+  console.log(`[ConflictDetector] Tracking ALL Airtable fields (not filtered by mappings)`);
+  console.log(`[ConflictDetector] ID column index: ${idColumnIndex}`);
+  console.log(`[ConflictDetector] Airtable records: ${airtableRecords.length}`);
+  console.log(`[ConflictDetector] Sheets rows: ${sheetsRows.length}`);
+  console.log(`[ConflictDetector] Has previous state: ${!!lastState}`);
+
+  if (lastState) {
+    console.log(`[ConflictDetector] Previous state records: ${lastState.records.size}`);
+  }
+
+  // Log first record comparison for debugging
+  if (airtableRecords.length > 0) {
+    const firstRecord = airtableRecords[0];
+    const airtableState = currentAirtableStates.get(firstRecord.id);
+    const sheetsState = currentSheetsStates.get(firstRecord.id);
+    const lastKnown = lastState?.records.get(firstRecord.id);
+
+    console.log(`[ConflictDetector] --- First Record Debug (${firstRecord.id}) ---`);
+    console.log(`[ConflictDetector] Airtable fields:`, JSON.stringify(firstRecord.fields, null, 2));
+
+    // Get the row from Sheets
+    const sheetsRow = sheetsRows.find(row => row[idColumnIndex || 0] === firstRecord.id);
+    console.log(`[ConflictDetector] Sheets row:`, JSON.stringify(sheetsRow, null, 2));
+
+    console.log(`[ConflictDetector] Airtable hash: ${airtableState?.contentHash?.substring(0, 16)}...`);
+    console.log(`[ConflictDetector] Sheets hash:   ${sheetsState?.contentHash?.substring(0, 16) || 'NOT FOUND'}...`);
+    console.log(`[ConflictDetector] Last hash:     ${lastKnown?.contentHash?.substring(0, 16) || 'NO PREVIOUS STATE'}...`);
+
+    if (lastKnown) {
+      console.log(`[ConflictDetector] Airtable changed: ${airtableState?.contentHash !== lastKnown.contentHash}`);
+      console.log(`[ConflictDetector] Sheets changed:   ${sheetsState?.contentHash !== lastKnown.contentHash}`);
+    }
+  }
+  console.log(`[ConflictDetector] ================================`);
+
   // If no previous state, everything is new
   if (!lastState) {
     result.newInAirtable = Array.from(currentAirtableStates.keys());
+
+    // CRITICAL FIX: newInSheets should contain row indices for rows without record IDs
+    // Parse `row_X` identifiers back to row indices
     result.newInSheets = Array.from(currentSheetsStates.keys())
-      .map((id) => parseInt(id.replace('row_', '')))
+      .filter((id) => id.startsWith('row_'))
+      .map((id) => parseInt(id.replace('row_', ''), 10))
       .filter((n) => !isNaN(n));
+
+    console.log(`[ConflictDetector] First sync detected: ${result.newInAirtable.length} new in Airtable, ${result.newInSheets.length} new in Sheets`);
+
     return result;
   }
 
@@ -429,9 +499,21 @@ export function detectConflicts(
 
     // New record in Sheets
     if (!lastKnown) {
-      const rowNum = parseInt(recordId.replace('row_', ''));
-      if (!isNaN(rowNum)) {
-        result.newInSheets.push(rowNum);
+      // CRITICAL FIX: Find the row index for this record ID or row identifier
+      let rowIndex = -1;
+
+      if (recordId.startsWith('row_')) {
+        // Row without record ID - extract index from identifier
+        rowIndex = parseInt(recordId.replace('row_', ''), 10);
+      } else {
+        // Row with record ID - find it in sheetsRows by matching the ID column
+        rowIndex = sheetsRows.findIndex((row) =>
+          idColumnIndex !== undefined && row[idColumnIndex] && String(row[idColumnIndex]).trim() === recordId
+        );
+      }
+
+      if (rowIndex >= 0 && !isNaN(rowIndex)) {
+        result.newInSheets.push(rowIndex);
       }
       continue;
     }
@@ -441,9 +523,16 @@ export function detectConflicts(
 
     if (sheetsChanged) {
       // Conflict: modified in Sheets but deleted in Airtable
-      const rowIndex = Array.from(currentSheetsStates.entries()).findIndex(
-        ([id]) => id === recordId
-      );
+      // Find row index for this record
+      let rowIndex = -1;
+      if (recordId.startsWith('row_')) {
+        rowIndex = parseInt(recordId.replace('row_', ''), 10);
+      } else {
+        rowIndex = sheetsRows.findIndex((row) =>
+          idColumnIndex !== undefined && row[idColumnIndex] && String(row[idColumnIndex]).trim() === recordId
+        );
+      }
+
       result.conflicts.push({
         recordId,
         airtableState: {
@@ -452,7 +541,7 @@ export function detectConflicts(
           modifiedTime: undefined,
         },
         sheetsState: {
-          row: sheetsRows[rowIndex],
+          row: rowIndex >= 0 ? sheetsRows[rowIndex] : [],
           contentHash: sheetsState.contentHash,
           modifiedTime: sheetsState.sheetsModifiedTime,
         },
@@ -565,47 +654,15 @@ function resolveConflict(
     };
   }
 
-  // NEWEST_WINS - compare timestamps
-  const airtableTime = conflict.airtableState.modifiedTime
-    ? new Date(conflict.airtableState.modifiedTime).getTime()
-    : 0;
-  const sheetsTime = conflict.sheetsState.modifiedTime
-    ? new Date(conflict.sheetsState.modifiedTime).getTime()
-    : 0;
-
-  if (airtableTime === 0 && sheetsTime === 0) {
-    // No timestamps available, default to Airtable
-    return {
-      recordId: conflict.recordId,
-      action: 'USE_AIRTABLE',
-      winner: 'AIRTABLE',
-      reason: 'Both sides modified, no timestamps available, defaulting to Airtable',
-    };
-  }
-
-  if (airtableTime > sheetsTime) {
-    return {
-      recordId: conflict.recordId,
-      action: 'USE_AIRTABLE',
-      winner: 'AIRTABLE',
-      reason: `Both sides modified, Airtable is newer (${new Date(airtableTime).toISOString()})`,
-    };
-  } else if (sheetsTime > airtableTime) {
-    return {
-      recordId: conflict.recordId,
-      action: 'USE_SHEETS',
-      winner: 'SHEETS',
-      reason: `Both sides modified, Sheets is newer (${new Date(sheetsTime).toISOString()})`,
-    };
-  } else {
-    // Same timestamp, default to Airtable
-    return {
-      recordId: conflict.recordId,
-      action: 'USE_AIRTABLE',
-      winner: 'AIRTABLE',
-      reason: 'Both sides modified at same time, defaulting to Airtable',
-    };
-  }
+  // NEWEST_WINS - Since reliable timestamps aren't available (Airtable only has createdTime,
+  // Sheets has no modification timestamps), we default to Airtable as source of truth
+  // when both sides have truly been modified since last sync
+  return {
+    recordId: conflict.recordId,
+    action: 'USE_AIRTABLE',
+    winner: 'AIRTABLE',
+    reason: 'Both sides modified since last sync, no reliable modification timestamps available, defaulting to Airtable as source of truth',
+  };
 }
 
 // ============================================================================

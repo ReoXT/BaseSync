@@ -8,6 +8,7 @@
 
 import type { User, UsageStats, SyncConfig } from 'wasp/entities';
 import { prisma } from 'wasp/server';
+import { checkAndSendUsageEmails } from '../emails/notificationSender';
 
 // ============================================================================
 // Helper Functions
@@ -299,9 +300,6 @@ export async function trackRecordsSyncedWithNotifications(
   // Track the usage
   await trackRecordsSynced(user.id, count);
 
-  // Import notification functions dynamically to avoid circular dependencies
-  const { checkAndSendUsageEmails } = await import('../emails/notificationSender');
-
   // Check limits and send notifications if needed
   try {
     await checkAndSendUsageEmails(user, count);
@@ -328,9 +326,6 @@ export async function trackSyncConfigCreatedWithNotifications(
   const syncConfigCount = await prisma.syncConfig.count({
     where: { userId: user.id },
   });
-
-  // Import notification functions dynamically to avoid circular dependencies
-  const { checkAndSendUsageEmails } = await import('../emails/notificationSender');
 
   // Check limits and send notifications if needed
   try {
