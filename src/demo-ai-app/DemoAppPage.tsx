@@ -12,8 +12,6 @@ import {
 import {
   CheckCircle2,
   XCircle,
-  Database,
-  Sheet,
   RefreshCw,
   AlertCircle,
   ArrowLeftRight,
@@ -245,8 +243,13 @@ function AirtableConnectionCard({
 
       <CardHeader className="relative">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
-            <Database className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-white dark:bg-white flex items-center justify-center shadow-lg p-2">
+            <img
+              src="/airtable-icon.svg"
+              alt="Airtable"
+              className="w-full h-full object-contain"
+              style={{ imageRendering: '-webkit-optimize-contrast', shapeRendering: 'geometricPrecision' }}
+            />
           </div>
           {isLoading ? (
             <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
@@ -383,8 +386,13 @@ function GoogleSheetsConnectionCard({
 
       <CardHeader className="relative">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
-            <Sheet className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-white dark:bg-white flex items-center justify-center shadow-lg p-2">
+            <img
+              src="/google-sheets-icon.svg"
+              alt="Google Sheets"
+              className="w-full h-full object-contain"
+              style={{ imageRendering: '-webkit-optimize-contrast', shapeRendering: 'geometricPrecision' }}
+            />
           </div>
           {isLoading ? (
             <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
@@ -584,14 +592,26 @@ function SyncConfigsList({ syncConfigs }: { syncConfigs: any[] }) {
                 {/* Platform Connection */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                    <Database className="w-3.5 h-3.5 text-orange-400" />
+                    <div className="w-3.5 h-3.5 flex items-center justify-center">
+                      <img
+                        src="/airtable-icon.svg"
+                        alt="Airtable"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                     <span className="text-xs text-foreground font-medium">
                       {config.airtableTableName || 'Airtable Table'}
                     </span>
                   </div>
                   <ArrowLeftRight className="w-4 h-4 text-cyan-400" />
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <Sheet className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="w-3.5 h-3.5 flex items-center justify-center">
+                      <img
+                        src="/google-sheets-icon.svg"
+                        alt="Google Sheets"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                     <span className="text-xs text-foreground font-medium">
                       {config.googleSheetName || 'Google Sheet'}
                     </span>

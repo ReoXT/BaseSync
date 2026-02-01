@@ -206,6 +206,12 @@ page NewSyncPage {
   authRequired: true,
   component: import NewSyncPage from "@src/client/pages/NewSyncPage"
 }
+
+route EditSyncRoute { path: "/sync/:id/edit", to: EditSyncPage }
+page EditSyncPage {
+  authRequired: true,
+  component: import EditSyncPage from "@src/client/pages/EditSyncPage"
+}
 //#endregion
 
 // Commented out: Demo AI App functionality not needed for BaseSync

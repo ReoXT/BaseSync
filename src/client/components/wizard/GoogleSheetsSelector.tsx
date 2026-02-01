@@ -1,4 +1,4 @@
-import { AlertCircle, FileSpreadsheet, Loader2, Sheet } from "lucide-react";
+import { AlertCircle, Loader2, Sheet, FileSpreadsheet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listUserSpreadsheets, getSpreadsheetSheets, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -203,8 +203,12 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
                 {spreadsheets?.map((spreadsheet: GoogleSpreadsheet) => (
                   <SelectItem key={spreadsheet.id} value={spreadsheet.id} className="cursor-pointer">
                     <div className="flex items-center gap-3 py-1">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
-                        <FileSpreadsheet className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
+                        <img
+                          src="/google-sheets-icon.svg"
+                          alt="Google Sheets"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                       <span className="font-medium">{spreadsheet.name}</span>
                     </div>
@@ -214,7 +218,13 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
             </Select>
             {selectedSpreadsheetId && (
               <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-fit">
-                <FileSpreadsheet className="h-3 w-3 text-emerald-400" />
+                <div className="w-3 h-3 flex items-center justify-center">
+                  <img
+                    src="/google-sheets-icon.svg"
+                    alt="Google Sheets"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <span className="text-xs font-mono text-foreground">
                   {spreadsheets?.find((s: GoogleSpreadsheet) => s.id === selectedSpreadsheetId)?.name}
                 </span>
@@ -255,8 +265,12 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
                     {sheets.map((sheet: GoogleSheet) => (
                       <SelectItem key={sheet.sheetId} value={`${sheet.sheetId}|${sheet.title}`} className="cursor-pointer">
                         <div className="flex items-center gap-3 py-1">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
-                            <Sheet className="h-4 w-4 text-white" />
+                          <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
+                            <img
+                              src="/google-sheets-icon.svg"
+                              alt="Google Sheet"
+                              className="w-full h-full object-contain"
+                            />
                           </div>
                           <div className="flex flex-col items-start">
                             <span className="font-medium">{sheet.title}</span>
@@ -271,7 +285,13 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
                 </Select>
                 {selectedSheetId && (
                   <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 w-fit">
-                    <Sheet className="h-3 w-3 text-blue-400" />
+                    <div className="w-3 h-3 flex items-center justify-center">
+                      <img
+                        src="/google-sheets-icon.svg"
+                        alt="Google Sheet"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                     <span className="text-xs font-mono text-foreground">
                       {sheets.find((s: GoogleSheet) => s.sheetId.toString() === selectedSheetId)?.title}
                     </span>

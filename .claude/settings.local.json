@@ -62,7 +62,8 @@
       "Bash(tsc:*)",
       "Bash(npx rollup:*)",
       "Bash(killall:*)",
-      "Bash(./scripts/patch-rollup-config.sh:*)"
+      "Bash(./scripts/patch-rollup-config.sh:*)",
+      "Bash(npm run db:migrate-dev:*)"
     ]
   }
 }

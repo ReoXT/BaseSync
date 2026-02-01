@@ -4,8 +4,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Database,
-  FileSpreadsheet,
   Layers,
   Loader2,
   Settings,
@@ -14,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSyncConfig, runInitialSync } from "wasp/client/operations";
+import { createSyncConfig, updateSyncConfig, runInitialSync } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
@@ -39,13 +37,17 @@ export interface ReviewStepData {
 export interface ReviewStepProps {
   /** All configuration data from previous steps */
   formData: ReviewStepData;
+  /** Whether this is edit mode */
+  isEditMode?: boolean;
+  /** Sync config ID when editing */
+  syncConfigId?: string;
 }
 
 /**
- * Step 5: Review and Create
- * Final review of all configuration before creating the sync
+ * Step 5: Review and Create/Update
+ * Final review of all configuration before creating or updating the sync
  */
-export function ReviewStep({ formData }: ReviewStepProps) {
+export function ReviewStep({ formData, isEditMode = false, syncConfigId }: ReviewStepProps) {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export function ReviewStep({ formData }: ReviewStepProps) {
     }
   };
 
-  // Handle sync creation
+  // Handle sync creation or update
   const handleCreateSync = async () => {
     setIsCreating(true);
     setCreateError(null);
@@ -104,12 +106,6 @@ export function ReviewStep({ formData }: ReviewStepProps) {
       if (!formData.syncName) {
         throw new Error("Sync name is required");
       }
-      if (!formData.airtableBaseId || !formData.airtableTableId) {
-        throw new Error("Airtable base and table are required");
-      }
-      if (!formData.googleSpreadsheetId || !formData.googleSheetId) {
-        throw new Error("Google Spreadsheet and sheet are required");
-      }
       if (!formData.fieldMappings || Object.keys(formData.fieldMappings).length === 0) {
         throw new Error("At least one field mapping is required");
       }
@@ -117,43 +113,70 @@ export function ReviewStep({ formData }: ReviewStepProps) {
         throw new Error("Sync direction is required");
       }
 
-      // Create the sync configuration
-      const result = await createSyncConfig({
-        name: formData.syncName,
-        airtableBaseId: formData.airtableBaseId,
-        airtableBaseName: formData.airtableBaseName,
-        airtableTableId: formData.airtableTableId,
-        airtableTableName: formData.airtableTableName,
-        airtableViewId: formData.airtableViewId,
-        googleSpreadsheetId: formData.googleSpreadsheetId,
-        googleSpreadsheetName: formData.googleSpreadsheetName,
-        googleSheetId: formData.googleSheetId,
-        googleSheetName: formData.googleSheetName,
-        fieldMappings: formData.fieldMappings,
-        syncDirection: formData.syncDirection,
-        conflictResolution: formData.conflictResolution,
-      });
+      if (isEditMode && syncConfigId) {
+        // Update existing sync configuration
+        const result = await updateSyncConfig({
+          syncConfigId,
+          name: formData.syncName,
+          fieldMappings: formData.fieldMappings,
+          syncDirection: formData.syncDirection,
+          conflictResolution: formData.conflictResolution,
+        });
 
-      console.log("Sync configuration created:", result);
+        console.log("Sync configuration updated:", result);
 
-      // Trigger initial sync in the background
-      try {
-        await runInitialSync({ syncConfigId: result.id });
-        console.log("Initial sync triggered for:", result.id);
-      } catch (syncError) {
-        console.warn("Initial sync trigger failed (will retry automatically):", syncError);
-        // Don't fail the whole creation if initial sync fails - it will run on schedule
+        // Redirect to dashboard with success message
+        navigate("/dashboard", {
+          state: {
+            successMessage: `Sync "${formData.syncName}" updated successfully!`,
+          },
+        });
+      } else {
+        // Create new sync configuration
+        if (!formData.airtableBaseId || !formData.airtableTableId) {
+          throw new Error("Airtable base and table are required");
+        }
+        if (!formData.googleSpreadsheetId || !formData.googleSheetId) {
+          throw new Error("Google Spreadsheet and sheet are required");
+        }
+
+        const result = await createSyncConfig({
+          name: formData.syncName,
+          airtableBaseId: formData.airtableBaseId,
+          airtableBaseName: formData.airtableBaseName,
+          airtableTableId: formData.airtableTableId,
+          airtableTableName: formData.airtableTableName,
+          airtableViewId: formData.airtableViewId,
+          googleSpreadsheetId: formData.googleSpreadsheetId,
+          googleSpreadsheetName: formData.googleSpreadsheetName,
+          googleSheetId: formData.googleSheetId,
+          googleSheetName: formData.googleSheetName,
+          fieldMappings: formData.fieldMappings,
+          syncDirection: formData.syncDirection,
+          conflictResolution: formData.conflictResolution,
+        });
+
+        console.log("Sync configuration created:", result);
+
+        // Trigger initial sync in the background
+        try {
+          await runInitialSync({ syncConfigId: result.id });
+          console.log("Initial sync triggered for:", result.id);
+        } catch (syncError) {
+          console.warn("Initial sync trigger failed (will retry automatically):", syncError);
+          // Don't fail the whole creation if initial sync fails - it will run on schedule
+        }
+
+        // Redirect to dashboard with success message
+        navigate("/dashboard", {
+          state: {
+            successMessage: `Sync "${formData.syncName}" created successfully! Initial sync is running.`,
+          },
+        });
       }
-
-      // Redirect to dashboard with success message
-      navigate("/dashboard", {
-        state: {
-          successMessage: `Sync "${formData.syncName}" created successfully! Initial sync is running.`,
-        },
-      });
     } catch (error) {
-      console.error("Failed to create sync:", error);
-      setCreateError(error instanceof Error ? error.message : "Failed to create sync configuration");
+      console.error(`Failed to ${isEditMode ? "update" : "create"} sync:`, error);
+      setCreateError(error instanceof Error ? error.message : `Failed to ${isEditMode ? "update" : "create"} sync configuration`);
       setIsCreating(false);
     }
   };
@@ -205,8 +228,12 @@ export function ReviewStep({ formData }: ReviewStepProps) {
           {/* Airtable */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                <Database className="h-3.5 w-3.5 text-white" />
+              <div className="w-6 h-6 rounded-lg bg-white dark:bg-white flex items-center justify-center p-0.5">
+                <img
+                  src="/airtable-icon.svg"
+                  alt="Airtable"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-sm font-semibold text-foreground">Airtable</span>
             </div>
@@ -228,8 +255,12 @@ export function ReviewStep({ formData }: ReviewStepProps) {
           {/* Google Sheets */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                <FileSpreadsheet className="h-3.5 w-3.5 text-white" />
+              <div className="w-6 h-6 rounded-lg bg-white dark:bg-white flex items-center justify-center p-0.5">
+                <img
+                  src="/google-sheets-icon.svg"
+                  alt="Google Sheets"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-sm font-semibold text-foreground">Google Sheets</span>
             </div>
@@ -356,7 +387,7 @@ export function ReviewStep({ formData }: ReviewStepProps) {
         <Alert className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-green-500/5 animate-fade-in">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           <AlertDescription className="text-foreground">
-            <strong className="text-emerald-400">Configuration looks good!</strong> Click "Create Sync" to start syncing your data.
+            <strong className="text-emerald-400">Configuration looks good!</strong> Click "{isEditMode ? "Update Sync" : "Create Sync"}" to {isEditMode ? "save your changes" : "start syncing your data"}.
           </AlertDescription>
         </Alert>
       )}
@@ -403,19 +434,19 @@ export function ReviewStep({ formData }: ReviewStepProps) {
           {isCreating ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              <span className="font-mono">Creating Sync...</span>
+              <span className="font-mono">{isEditMode ? "Updating Sync..." : "Creating Sync..."}</span>
             </>
           ) : (
             <>
               <Check className="mr-2 h-5 w-5" />
-              <span className="font-semibold">Create Sync</span>
+              <span className="font-semibold">{isEditMode ? "Update Sync" : "Create Sync"}</span>
             </>
           )}
         </Button>
       </div>
 
       {/* Info about what happens next */}
-      {!isCreating && (
+      {!isCreating && !isEditMode && (
         <Alert className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/5">
           <Zap className="h-4 w-4 text-blue-400" />
           <AlertDescription className="text-foreground">
@@ -432,6 +463,30 @@ export function ReviewStep({ formData }: ReviewStepProps) {
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>You can manually trigger syncs anytime from the dashboard</span>
+              </li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Info for edit mode */}
+      {!isCreating && isEditMode && (
+        <Alert className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/5">
+          <Zap className="h-4 w-4 text-blue-400" />
+          <AlertDescription className="text-foreground">
+            <p className="font-semibold text-blue-400 mb-2">⚡ What happens after updating?</p>
+            <ul className="text-sm space-y-1.5 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Changes will apply to the next sync run</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>You can trigger a manual sync to apply changes immediately</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Existing data won't be deleted if you remove field mappings</span>
               </li>
             </ul>
           </AlertDescription>

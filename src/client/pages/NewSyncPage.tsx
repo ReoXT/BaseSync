@@ -44,10 +44,16 @@ interface SyncFormData {
   conflictResolution?: "AIRTABLE_WINS" | "SHEETS_WINS" | "NEWEST_WINS";
 }
 
-export default function NewSyncPage() {
+interface NewSyncPageProps {
+  isEditMode?: boolean;
+  syncConfigId?: string;
+  initialData?: SyncFormData;
+}
+
+export default function NewSyncPage({ isEditMode = false, syncConfigId, initialData }: NewSyncPageProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<SyncFormData>({});
+  const [formData, setFormData] = useState<SyncFormData>(initialData || {});
 
   // Update form data
   const updateFormData = (data: Partial<SyncFormData>) => {
@@ -96,7 +102,7 @@ export default function NewSyncPage() {
       case 4:
         return <SyncConfigurationStep formData={formData} updateFormData={updateFormData} />;
       case 5:
-        return <ReviewStepWrapper formData={formData} />;
+        return <ReviewStepWrapper formData={formData} isEditMode={isEditMode} syncConfigId={syncConfigId} />;
       default:
         return null;
     }
@@ -150,14 +156,17 @@ export default function NewSyncPage() {
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-4">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-mono text-cyan-400">Setup Wizard</span>
+              <span className="text-sm font-mono text-cyan-400">{isEditMode ? "Edit Configuration" : "Setup Wizard"}</span>
             </div>
 
             <h1 className="text-foreground text-4xl md:text-5xl font-bold mb-2">
-              Create New Sync
+              {isEditMode ? "Edit Sync Configuration" : "Create New Sync"}
             </h1>
             <p className="text-muted-foreground text-lg">
-              Set up a new sync configuration between Airtable and Google Sheets
+              {isEditMode
+                ? "Update your sync configuration settings"
+                : "Set up a new sync configuration between Airtable and Google Sheets"
+              }
             </p>
           </div>
 
@@ -348,15 +357,15 @@ function SyncConfigurationStep({
   );
 }
 
-function ReviewStepWrapper({ formData }: { formData: SyncFormData }) {
+function ReviewStepWrapper({ formData, isEditMode, syncConfigId }: { formData: SyncFormData; isEditMode?: boolean; syncConfigId?: string }) {
   return (
     <div className="space-y-4">
       <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20">
         <p className="text-sm text-muted-foreground">
-          Review your sync configuration before creating.
+          {isEditMode ? "Review your changes before updating." : "Review your sync configuration before creating."}
         </p>
       </div>
-      <ReviewStep formData={formData} />
+      <ReviewStep formData={formData} isEditMode={isEditMode} syncConfigId={syncConfigId} />
     </div>
   );
 }

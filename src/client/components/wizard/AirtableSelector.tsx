@@ -1,4 +1,4 @@
-import { AlertCircle, Database, Eye, Loader2, Table } from "lucide-react";
+import { AlertCircle, Eye, Loader2, Table, Database } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listUserAirtableBases, getAirtableTableSchema, getAirtableBaseTables, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -235,8 +235,12 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
                 {bases?.map((base: AirtableBase) => (
                   <SelectItem key={base.id} value={base.id} className="cursor-pointer">
                     <div className="flex items-center gap-3 py-1">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                        <Database className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
+                        <img
+                          src="/airtable-icon.svg"
+                          alt="Airtable"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                       <span className="font-medium">{base.name}</span>
                     </div>
@@ -246,7 +250,13 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
             </Select>
             {selectedBaseId && (
               <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 w-fit">
-                <Database className="h-3 w-3 text-orange-400" />
+                <div className="w-3 h-3 flex items-center justify-center">
+                  <img
+                    src="/airtable-icon.svg"
+                    alt="Airtable"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <span className="text-xs font-mono text-foreground">
                   {bases?.find((b: AirtableBase) => b.id === selectedBaseId)?.name}
                 </span>
@@ -290,8 +300,12 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
                     {tables.map((table: AirtableTable) => (
                       <SelectItem key={table.id} value={`${table.id}|${table.name}`} className="cursor-pointer">
                         <div className="flex items-center gap-3 py-1">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
-                            <Table className="h-4 w-4 text-white" />
+                          <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
+                            <img
+                              src="/airtable-icon.svg"
+                              alt="Airtable Table"
+                              className="w-full h-full object-contain"
+                            />
                           </div>
                           <span className="font-medium">{table.name}</span>
                         </div>
