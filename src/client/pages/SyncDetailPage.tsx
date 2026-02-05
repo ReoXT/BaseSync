@@ -178,8 +178,30 @@ export default function SyncDetailPage() {
   const mappedFieldsCount = Object.keys(syncConfig.fieldMappings || {}).length;
 
   return (
-    <div className="min-h-screen pb-12">
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+    <div className="relative min-h-screen pb-12 overflow-hidden">
+      {/* Subtle background pattern + orbs */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div
+          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+          }}
+        />
+        <div
+          className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute top-1/2 -left-40 h-96 w-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-8 space-y-8">
         {/* Back link */}
         <Button
           variant="ghost"
@@ -194,6 +216,10 @@ export default function SyncDetailPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-xs font-mono text-cyan-400">SYNC OVERVIEW</span>
+            </div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold">{syncConfig.name}</h1>
               {syncConfig.isActive ? (
@@ -249,36 +275,46 @@ export default function SyncDetailPage() {
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Records Synced</p>
-            <p className="text-2xl font-bold">{syncStats.totalRecords.toLocaleString()}</p>
-          </div>
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Success Rate</p>
-            <p className="text-2xl font-bold">
-              {syncStats.success + syncStats.failed > 0
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            {
+              label: "Records Synced",
+              value: syncStats.totalRecords.toLocaleString(),
+            },
+            {
+              label: "Success Rate",
+              value: `${syncStats.success + syncStats.failed > 0
                 ? Math.round((syncStats.success / (syncStats.success + syncStats.failed)) * 100)
-                : 0}%
-            </p>
-          </div>
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Total Syncs</p>
-            <p className="text-2xl font-bold">{syncLogs?.length || 0}</p>
-          </div>
+                : 0}%`,
+            },
+            {
+              label: "Total Syncs",
+              value: (syncLogs?.length || 0).toString(),
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="relative group rounded-xl border border-border/60 bg-card/70 backdrop-blur-sm p-4 overflow-hidden transition-all duration-300 hover:shadow-md"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <p className="text-xs text-muted-foreground mb-1 relative">{stat.label}</p>
+              <p className="text-2xl font-bold relative">{stat.value}</p>
+            </div>
+          ))}
         </div>
 
         {/* Connection Summary */}
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="relative rounded-xl border border-border/60 bg-card/70 backdrop-blur-sm overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
           <div className="grid grid-cols-2 divide-x divide-border">
-            <div className="p-4">
+            <div className="p-4 relative">
               <div className="flex items-center gap-2 mb-2">
                 <img src="/airtable-icon.svg" alt="" className="w-4 h-4" />
                 <span className="text-xs text-muted-foreground">Airtable</span>
               </div>
               <p className="font-medium truncate">{syncConfig.airtableTableName || syncConfig.airtableTableId}</p>
             </div>
-            <div className="p-4">
+            <div className="p-4 relative">
               <div className="flex items-center gap-2 mb-2">
                 <img src="/google-sheets-icon.svg" alt="" className="w-4 h-4" />
                 <span className="text-xs text-muted-foreground">Google Sheets</span>
@@ -289,10 +325,10 @@ export default function SyncDetailPage() {
         </div>
 
         {/* Configuration - Progressive Disclosure */}
-        <div className="rounded-lg border border-border">
+        <div className="rounded-xl border border-border/60 bg-card/70 backdrop-blur-sm overflow-hidden">
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/40 transition-colors"
           >
             <span className="font-medium">Configuration Details</span>
             <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showConfig && "rotate-180")} />
@@ -335,7 +371,7 @@ export default function SyncDetailPage() {
                     {Object.entries(syncConfig.fieldMappings || {}).map(([fieldId, columnIndex]) => (
                       <span
                         key={fieldId}
-                        className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-muted"
+                        className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-muted/60 border border-border/60"
                       >
                         <span className="truncate max-w-[120px]">{fieldId}</span>
                         <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -355,7 +391,7 @@ export default function SyncDetailPage() {
         <SyncHistory syncLogs={syncLogs || []} isLoading={isLoadingLogs} limit={50} />
 
         {/* Delete Zone - Progressive Disclosure */}
-        <div className="rounded-lg border border-border p-4">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}

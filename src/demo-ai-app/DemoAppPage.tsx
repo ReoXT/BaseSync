@@ -98,18 +98,23 @@ export default function DemoAppPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           {/* Header */}
           <div className="mx-auto max-w-4xl text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-6 animate-fade-in">
-              <Zap className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-mono text-cyan-400">
-                Command Center
-              </span>
+            <div className="relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-sm px-6 py-8 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-6 animate-fade-in">
+                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm font-mono text-cyan-400">
+                    Command Center
+                  </span>
+                </div>
+                <h1 className="text-foreground text-4xl md:text-5xl font-bold tracking-tight mb-4 animate-slide-up">
+                  <span className="text-gradient-sync">Dashboard</span>
+                </h1>
+                <p className="text-muted-foreground text-lg animate-fade-in-delayed max-w-2xl mx-auto">
+                  Monitor and manage your data sync operations
+                </p>
+              </div>
             </div>
-            <h1 className="text-foreground text-4xl md:text-5xl font-bold tracking-tight mb-4 animate-slide-up">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground text-lg animate-fade-in-delayed">
-              Monitor and manage your data sync operations
-            </p>
           </div>
 
           {/* Connection Status Cards */}

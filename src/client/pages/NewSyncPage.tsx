@@ -127,6 +127,10 @@ export default function NewSyncPage({ isEditMode = false, syncConfigId, initialD
           className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-cyan-500/5 blur-3xl"
           aria-hidden="true"
         />
+        <div
+          className="absolute -bottom-40 -right-32 w-[520px] h-[520px] rounded-full bg-blue-500/5 blur-3xl"
+          aria-hidden="true"
+        />
       </div>
 
       <div className="relative z-10 py-12 lg:py-16">
@@ -143,6 +147,11 @@ export default function NewSyncPage({ isEditMode = false, syncConfigId, initialD
               Dashboard
             </Button>
 
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-4">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+              <span className="text-xs font-mono text-cyan-400">SYNC WIZARD</span>
+            </div>
+
             <h1 className="text-foreground text-3xl md:text-4xl font-bold mb-2">
               {isEditMode ? "Edit Sync" : "New Sync"}
             </h1>
@@ -155,8 +164,9 @@ export default function NewSyncPage({ isEditMode = false, syncConfigId, initialD
           <ProgressStepper steps={STEPS} currentStep={currentStep} />
 
           {/* Step Content - Clean Card */}
-          <Card className="mb-8 border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
-            <CardContent className="p-6 md:p-8">{renderStepContent()}</CardContent>
+          <Card className="relative group mb-8 border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="relative p-6 md:p-8">{renderStepContent()}</CardContent>
           </Card>
 
           {/* Clean Navigation */}

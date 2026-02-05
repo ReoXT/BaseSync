@@ -129,7 +129,7 @@ export function SyncOptions({ value, onChange }: SyncOptionsProps) {
           placeholder="e.g., Customer Data Sync"
           value={syncName}
           onChange={(e) => handleSyncNameChange(e.target.value)}
-          className="h-11"
+          className="h-11 bg-card/60 border-border/60 focus-visible:ring-cyan-500/30"
         />
         <p className="text-xs text-muted-foreground">
           Choose a name to identify this sync
@@ -146,16 +146,16 @@ export function SyncOptions({ value, onChange }: SyncOptionsProps) {
               type="button"
               onClick={() => handleDirectionChange(option.value)}
               className={cn(
-                "flex items-center gap-3 p-4 rounded-lg border text-left transition-all",
+                "flex items-center gap-3 p-4 rounded-lg border text-left transition-all bg-card/50 backdrop-blur-sm",
                 syncDirection === option.value
-                  ? "border-cyan-500 bg-cyan-500/5"
-                  : "border-border hover:border-border/80 hover:bg-muted/50"
+                  ? "border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 shadow-sm"
+                  : "border-border/60 hover:border-cyan-500/30 hover:bg-muted/40"
               )}
             >
               <div className={cn(
                 "flex items-center justify-center w-8 h-8 rounded-full",
                 syncDirection === option.value
-                  ? "bg-cyan-500 text-white"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-sm shadow-cyan-500/30"
                   : "bg-muted text-muted-foreground"
               )}>
                 {syncDirection === option.value ? (
@@ -168,7 +168,7 @@ export function SyncOptions({ value, onChange }: SyncOptionsProps) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">{option.label}</span>
                   {option.recommended && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-mono">
                       Recommended
                     </span>
                   )}
@@ -192,44 +192,44 @@ export function SyncOptions({ value, onChange }: SyncOptionsProps) {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => handleConflictResolutionChange(option.value)}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
-                  conflictResolution === option.value
-                    ? "border-cyan-500 bg-cyan-500/5"
-                    : "border-border hover:border-border/80 hover:bg-muted/50"
+              onClick={() => handleConflictResolutionChange(option.value)}
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-lg border text-left transition-all bg-card/50 backdrop-blur-sm",
+                conflictResolution === option.value
+                  ? "border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 shadow-sm"
+                  : "border-border/60 hover:border-cyan-500/30 hover:bg-muted/40"
+              )}
+            >
+              <div className={cn(
+                "flex items-center justify-center w-6 h-6 rounded-full border-2",
+                conflictResolution === option.value
+                  ? "border-cyan-500 bg-gradient-to-r from-cyan-500 to-blue-500"
+                  : "border-muted-foreground/30"
+              )}>
+                {conflictResolution === option.value && (
+                  <Check className="h-3 w-3 text-white" />
                 )}
-              >
-                <div className={cn(
-                  "flex items-center justify-center w-6 h-6 rounded-full border-2",
-                  conflictResolution === option.value
-                    ? "border-cyan-500 bg-cyan-500"
-                    : "border-muted-foreground/30"
-                )}>
-                  {conflictResolution === option.value && (
-                    <Check className="h-3 w-3 text-white" />
-                  )}
-                </div>
+              </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{option.label}</span>
-                    {option.recommended && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                        Recommended
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                  <span className="font-medium text-sm">{option.label}</span>
+                  {option.recommended && (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-mono">
+                      Recommended
+                    </span>
+                  )}
                 </div>
-              </button>
+                <span className="text-xs text-muted-foreground">{option.description}</span>
+              </div>
+            </button>
             ))}
           </div>
         </div>
       )}
 
       {/* Sync frequency info */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-        <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+      <div className="flex items-start gap-3 p-4 rounded-lg bg-cyan-500/5 border border-cyan-500/20 backdrop-blur-sm">
+        <Clock className="h-4 w-4 text-cyan-500 mt-0.5" />
         <div>
           <p className="text-sm font-medium">Automatic sync every 5 minutes</p>
           <p className="text-xs text-muted-foreground mt-0.5">

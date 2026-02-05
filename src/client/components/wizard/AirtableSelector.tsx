@@ -1,4 +1,4 @@
-import { AlertCircle, ChevronDown, Loader2, Table } from "lucide-react";
+import { AlertCircle, Loader2, Table } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listUserAirtableBases, getAirtableTableSchema, getAirtableBaseTables, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -57,7 +57,6 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   const [tables, setTables] = useState<AirtableTable[] | null>(null);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [tablesError, setTablesError] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(!!value.viewId);
 
   const {
     data: bases,
@@ -264,36 +263,32 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
         </div>
       )}
 
-      {/* Advanced Options - Progressive Disclosure */}
+      {/* View Options */}
       {selectedTableId && (
         <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-            Advanced options
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">View Options</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-mono">
+              Recommended
+            </span>
+          </div>
 
-          {showAdvanced && (
-            <div className="space-y-2 pl-5 border-l-2 border-border">
-              <Label htmlFor="airtable-view-id" className="text-sm font-medium">
-                View ID <span className="text-muted-foreground font-normal">(optional)</span>
-              </Label>
-              <Input
-                id="airtable-view-id"
-                type="text"
-                placeholder="viw..."
-                value={viewId || ""}
-                onChange={(e) => handleViewIdChange(e.target.value)}
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground">
-                Add a view ID to sync records in a specific order. Find it in your Airtable URL.
-              </p>
-            </div>
-          )}
+          <div className="space-y-2 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4">
+            <Label htmlFor="airtable-view-id" className="text-sm font-medium">
+              View ID <span className="text-muted-foreground font-normal">(recommended)</span>
+            </Label>
+            <Input
+              id="airtable-view-id"
+              type="text"
+              placeholder="viw..."
+              value={viewId || ""}
+              onChange={(e) => handleViewIdChange(e.target.value)}
+              className="h-11 bg-card/60 border-border/60 focus-visible:ring-cyan-500/30"
+            />
+            <p className="text-xs text-muted-foreground">
+              Add a view ID to sync records in a specific order. Find it in your Airtable URL.
+            </p>
+          </div>
         </div>
       )}
 
