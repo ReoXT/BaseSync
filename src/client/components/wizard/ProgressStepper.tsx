@@ -13,98 +13,82 @@ interface ProgressStepperProps {
 }
 
 export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
-  // Calculate progress: 0% at step 1, 100% at last step
-  // This represents how far along we are between the first and last step
-  const progressPercentage = ((currentStep - 1) / (steps.length - 1)) * 100;
-
   return (
-    <div className="w-full py-8 mb-8">
-      <div className="relative max-w-4xl mx-auto px-4">
-        {/* Steps Container */}
-        <div className="flex justify-between relative">
-          {/* Background Line - positioned absolutely to span from first to last step center */}
-          <div
-            className="absolute top-6 h-0.5 bg-gradient-to-r from-muted via-muted to-muted"
-            style={{
-              left: '24px', // Half of step circle width (w-12 = 48px / 2)
-              right: '24px',
-            }}
-          >
-            <div className="absolute inset-0 bg-muted/50" />
-          </div>
+    <div className="w-full mb-10">
+      {/* Mobile: Simple progress indicator */}
+      <div className="md:hidden flex items-center justify-center gap-2 mb-2">
+        {steps.map((step, index) => {
+          const stepNumber = index + 1;
+          const isCompleted = stepNumber < currentStep;
+          const isCurrent = stepNumber === currentStep;
 
-          {/* Animated Progress Line */}
-          <div
-            className="absolute top-6 h-0.5 bg-gradient-to-r from-cyan-500 via-cyan-400 to-blue-500 transition-all duration-700 ease-out shadow-[0_0_20px_rgba(6,182,212,0.5)]"
-            style={{
-              left: '24px',
-              width: `calc((100% - 48px) * ${progressPercentage / 100})`,
-            }}
-          >
-            {/* Glowing tip */}
-            {currentStep > 1 && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.8)] animate-pulse" />
-            )}
-          </div>
+          return (
+            <div
+              key={step.id}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all duration-300",
+                isCompleted && "bg-cyan-500",
+                isCurrent && "bg-cyan-500 w-6",
+                !isCompleted && !isCurrent && "bg-muted-foreground/30"
+              )}
+            />
+          );
+        })}
+      </div>
 
+      {/* Desktop: Full stepper */}
+      <div className="hidden md:block">
+        <div className="flex items-center justify-between max-w-2xl mx-auto">
           {steps.map((step, index) => {
             const stepNumber = index + 1;
             const isCompleted = stepNumber < currentStep;
             const isCurrent = stepNumber === currentStep;
             const isPending = stepNumber > currentStep;
+            const isLast = index === steps.length - 1;
 
             return (
-              <div
-                key={step.id}
-                className="relative flex flex-col items-center gap-3 z-10"
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                }}
-              >
-                {/* Step Circle */}
-                <div
-                  className={cn(
-                    "relative flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm transition-all duration-500 ease-out",
-                    {
-                      // Completed
-                      "bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 scale-100":
-                        isCompleted,
-                      // Current
-                      "bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-xl shadow-cyan-500/50 scale-110 ring-4 ring-cyan-500/20":
-                        isCurrent,
-                      // Pending
-                      "bg-muted text-muted-foreground scale-95": isPending,
-                    }
-                  )}
-                >
-                  {/* Pulse animation for current step */}
-                  {isCurrent && (
-                    <>
-                      <div className="absolute inset-0 rounded-full bg-cyan-500/30 animate-ping" />
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500" />
-                    </>
-                  )}
-
-                  {/* Content */}
-                  <span className="relative z-10 flex items-center justify-center">
+              <div key={step.id} className="flex items-center flex-1 last:flex-none">
+                {/* Step indicator */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-9 h-9 rounded-full text-sm font-medium transition-all duration-300",
+                      isCompleted && "bg-cyan-500 text-white",
+                      isCurrent && "bg-cyan-500 text-white ring-4 ring-cyan-500/20",
+                      isPending && "bg-muted text-muted-foreground"
+                    )}
+                  >
                     {isCompleted ? (
-                      <Check className="w-5 h-5 animate-in zoom-in duration-300" />
+                      <Check className="w-4 h-4" />
                     ) : (
                       stepNumber
                     )}
+                  </div>
+                  <span
+                    className={cn(
+                      "mt-2 text-xs font-medium whitespace-nowrap",
+                      isCurrent && "text-cyan-500",
+                      isCompleted && "text-foreground",
+                      isPending && "text-muted-foreground"
+                    )}
+                  >
+                    {step.title}
                   </span>
                 </div>
 
-                {/* Step Label */}
-                <span
-                  className={cn("absolute top-16 text-xs font-semibold whitespace-nowrap transition-all duration-300", {
-                    "text-cyan-400": isCurrent,
-                    "text-foreground": isCompleted,
-                    "text-muted-foreground": isPending,
-                  })}
-                >
-                  {step.title}
-                </span>
+                {/* Connector line */}
+                {!isLast && (
+                  <div className="flex-1 mx-3 h-px relative">
+                    <div className="absolute inset-0 bg-muted" />
+                    <div
+                      className={cn(
+                        "absolute top-0 left-0 h-full bg-cyan-500 transition-all duration-500",
+                        isCompleted && "w-full",
+                        isCurrent && "w-0"
+                      )}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

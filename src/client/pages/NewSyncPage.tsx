@@ -109,112 +109,79 @@ export default function NewSyncPage({ isEditMode = false, syncConfigId, initialD
   };
 
   return (
-    <div className="relative min-h-screen pb-20 overflow-hidden">
-      {/* Grid Background */}
+    <div className="relative min-h-screen pb-24 overflow-hidden">
+      {/* Subtle Grid Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
           style={{
             backgroundImage: `
               linear-gradient(to right, currentColor 1px, transparent 1px),
               linear-gradient(to bottom, currentColor 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
-            maskImage: `
-              radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
-            `,
-            WebkitMaskImage: `
-              radial-gradient(ellipse 120% 120% at 50% 50%, black 20%, rgba(0,0,0,0.5) 50%, transparent 80%)
-            `,
           }}
         />
-
-        {/* Gradient Orbs */}
+        {/* Single subtle gradient orb */}
         <div
-          className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl animate-pulse-slow"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slower"
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-cyan-500/5 blur-3xl"
           aria-hidden="true"
         />
       </div>
 
-      <div className="relative z-10 py-10 lg:mt-10">
-        <div className="mx-auto max-w-5xl px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 animate-fade-in">
+      <div className="relative z-10 py-12 lg:py-16">
+        <div className="mx-auto max-w-4xl px-6 lg:px-8">
+          {/* Compact Header */}
+          <div className="mb-10 animate-fade-in">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/dashboard")}
-              className="mb-4 hover:bg-cyan-500/5 transition-colors"
+              className="mb-6 -ml-2 text-muted-foreground hover:text-foreground hover:bg-transparent"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Dashboard
             </Button>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm mb-4">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-mono text-cyan-400">{isEditMode ? "Edit Configuration" : "Setup Wizard"}</span>
-            </div>
-
-            <h1 className="text-foreground text-4xl md:text-5xl font-bold mb-2">
-              {isEditMode ? "Edit Sync Configuration" : "Create New Sync"}
+            <h1 className="text-foreground text-3xl md:text-4xl font-bold mb-2">
+              {isEditMode ? "Edit Sync" : "New Sync"}
             </h1>
-            <p className="text-muted-foreground text-lg">
-              {isEditMode
-                ? "Update your sync configuration settings"
-                : "Set up a new sync configuration between Airtable and Google Sheets"
-              }
+            <p className="text-muted-foreground">
+              {STEPS[currentStep - 1].description}
             </p>
           </div>
 
           {/* Progress Stepper */}
           <ProgressStepper steps={STEPS} currentStep={currentStep} />
 
-          {/* Step Content */}
-          <Card className="mb-6 border-cyan-500/20 bg-card/80 backdrop-blur-sm overflow-hidden animate-fade-in-delayed-more">
-            {/* Card Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-50 pointer-events-none" />
-
-            <CardHeader className="relative">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-1 h-8 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
-                <CardTitle className="text-2xl">{STEPS[currentStep - 1].title}</CardTitle>
-              </div>
-              <CardDescription className="text-base">
-                {STEPS[currentStep - 1].description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="relative">{renderStepContent()}</CardContent>
+          {/* Step Content - Clean Card */}
+          <Card className="mb-8 border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
+            <CardContent className="p-6 md:p-8">{renderStepContent()}</CardContent>
           </Card>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between animate-fade-in-delayed-more">
+          {/* Clean Navigation */}
+          <div className="flex items-center justify-between">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={goToPreviousStep}
               disabled={currentStep === 1}
-              className="border-cyan-500/30 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all duration-300"
+              className="text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Previous
+              Back
             </Button>
 
-            <div className="px-4 py-2 rounded-full bg-muted/50 backdrop-blur-sm border border-border">
-              <span className="text-sm font-mono text-muted-foreground">
-                Step <span className="text-gradient-sync font-bold">{currentStep}</span> of {STEPS.length}
-              </span>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {currentStep} of {STEPS.length}
+            </span>
 
             {currentStep < STEPS.length && (
               <Button
                 onClick={goToNextStep}
                 disabled={!canGoNext()}
-                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all duration-300 disabled:opacity-50"
               >
-                Next
+                Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
@@ -235,29 +202,22 @@ function AirtableSelectionStep({
   updateFormData: (data: Partial<SyncFormData>) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="px-4 py-3 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
-        <p className="text-sm text-muted-foreground">
-          Select your Airtable base and table to sync from.
-        </p>
-      </div>
-      <AirtableSelector
-        value={{
-          baseId: formData.airtableBaseId,
-          baseName: formData.airtableBaseName,
-          tableId: formData.airtableTableId,
-          tableName: formData.airtableTableName,
-          viewId: formData.airtableViewId,
-        }}
-        onChange={(data) => updateFormData({
-          airtableBaseId: data.baseId,
-          airtableBaseName: data.baseName,
-          airtableTableId: data.tableId,
-          airtableTableName: data.tableName,
-          airtableViewId: data.viewId,
-        })}
-      />
-    </div>
+    <AirtableSelector
+      value={{
+        baseId: formData.airtableBaseId,
+        baseName: formData.airtableBaseName,
+        tableId: formData.airtableTableId,
+        tableName: formData.airtableTableName,
+        viewId: formData.airtableViewId,
+      }}
+      onChange={(data) => updateFormData({
+        airtableBaseId: data.baseId,
+        airtableBaseName: data.baseName,
+        airtableTableId: data.tableId,
+        airtableTableName: data.tableName,
+        airtableViewId: data.viewId,
+      })}
+    />
   );
 }
 
@@ -269,27 +229,20 @@ function GoogleSheetsSelectionStep({
   updateFormData: (data: Partial<SyncFormData>) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="px-4 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-        <p className="text-sm text-muted-foreground">
-          Select your Google Spreadsheet and sheet to sync to.
-        </p>
-      </div>
-      <GoogleSheetsSelector
-        value={{
-          spreadsheetId: formData.googleSpreadsheetId,
-          spreadsheetName: formData.googleSpreadsheetName,
-          sheetId: formData.googleSheetId,
-          sheetName: formData.googleSheetName,
-        }}
-        onChange={(data) => updateFormData({
-          googleSpreadsheetId: data.spreadsheetId,
-          googleSpreadsheetName: data.spreadsheetName,
-          googleSheetId: data.sheetId,
-          googleSheetName: data.sheetName,
-        })}
-      />
-    </div>
+    <GoogleSheetsSelector
+      value={{
+        spreadsheetId: formData.googleSpreadsheetId,
+        spreadsheetName: formData.googleSpreadsheetName,
+        sheetId: formData.googleSheetId,
+        sheetName: formData.googleSheetName,
+      }}
+      onChange={(data) => updateFormData({
+        googleSpreadsheetId: data.spreadsheetId,
+        googleSpreadsheetName: data.spreadsheetName,
+        googleSheetId: data.sheetId,
+        googleSheetName: data.sheetName,
+      })}
+    />
   );
 }
 
@@ -301,25 +254,18 @@ function FieldMappingStep({
   updateFormData: (data: Partial<SyncFormData>) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/5 to-emerald-500/5 border border-cyan-500/20">
-        <p className="text-sm text-muted-foreground">
-          Map Airtable fields to Google Sheets columns. We'll automatically suggest mappings based on field names.
-        </p>
-      </div>
-      <FieldMapper
-        value={{
-          airtableBaseId: formData.airtableBaseId,
-          airtableTableId: formData.airtableTableId,
-          googleSpreadsheetId: formData.googleSpreadsheetId,
-          googleSheetId: formData.googleSheetId,
-          fieldMappings: formData.fieldMappings,
-        }}
-        onChange={(data) => updateFormData({
-          fieldMappings: data.fieldMappings,
-        })}
-      />
-    </div>
+    <FieldMapper
+      value={{
+        airtableBaseId: formData.airtableBaseId,
+        airtableTableId: formData.airtableTableId,
+        googleSpreadsheetId: formData.googleSpreadsheetId,
+        googleSheetId: formData.googleSheetId,
+        fieldMappings: formData.fieldMappings,
+      }}
+      onChange={(data) => updateFormData({
+        fieldMappings: data.fieldMappings,
+      })}
+    />
   );
 }
 
@@ -331,41 +277,25 @@ function SyncConfigurationStep({
   updateFormData: (data: Partial<SyncFormData>) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
-        <p className="text-sm text-muted-foreground">
-          Configure how your data will sync between Airtable and Google Sheets.
-        </p>
-      </div>
-      <SyncOptions
-        value={{
-          airtableBaseName: formData.airtableBaseName,
-          airtableTableName: formData.airtableTableName,
-          googleSpreadsheetName: formData.googleSpreadsheetName,
-          googleSheetName: formData.googleSheetName,
-          syncName: formData.syncName,
-          syncDirection: formData.syncDirection,
-          conflictResolution: formData.conflictResolution,
-        }}
-        onChange={(data) => updateFormData({
-          syncName: data.syncName,
-          syncDirection: data.syncDirection,
-          conflictResolution: data.conflictResolution,
-        })}
-      />
-    </div>
+    <SyncOptions
+      value={{
+        airtableBaseName: formData.airtableBaseName,
+        airtableTableName: formData.airtableTableName,
+        googleSpreadsheetName: formData.googleSpreadsheetName,
+        googleSheetName: formData.googleSheetName,
+        syncName: formData.syncName,
+        syncDirection: formData.syncDirection,
+        conflictResolution: formData.conflictResolution,
+      }}
+      onChange={(data) => updateFormData({
+        syncName: data.syncName,
+        syncDirection: data.syncDirection,
+        conflictResolution: data.conflictResolution,
+      })}
+    />
   );
 }
 
 function ReviewStepWrapper({ formData, isEditMode, syncConfigId }: { formData: SyncFormData; isEditMode?: boolean; syncConfigId?: string }) {
-  return (
-    <div className="space-y-4">
-      <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20">
-        <p className="text-sm text-muted-foreground">
-          {isEditMode ? "Review your changes before updating." : "Review your sync configuration before creating."}
-        </p>
-      </div>
-      <ReviewStep formData={formData} isEditMode={isEditMode} syncConfigId={syncConfigId} />
-    </div>
-  );
+  return <ReviewStep formData={formData} isEditMode={isEditMode} syncConfigId={syncConfigId} />;
 }

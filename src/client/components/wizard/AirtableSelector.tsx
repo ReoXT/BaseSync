@@ -1,8 +1,7 @@
-import { AlertCircle, Eye, Loader2, Table, Database } from "lucide-react";
+import { AlertCircle, ChevronDown, Loader2, Table } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listUserAirtableBases, getAirtableTableSchema, getAirtableBaseTables, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
-import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
@@ -16,9 +15,7 @@ export interface AirtableSelectionData {
 }
 
 export interface AirtableSelectorProps {
-  /** Current selection data */
   value: AirtableSelectionData;
-  /** Callback when selection changes */
   onChange: (data: AirtableSelectionData) => void;
 }
 
@@ -50,10 +47,6 @@ interface AirtableField {
   description?: string;
 }
 
-/**
- * Step 1: Airtable Base and Table Selection
- * Allows users to select an Airtable base and table for syncing
- */
 export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   const [selectedBaseId, setSelectedBaseId] = useState<string | undefined>(value.baseId);
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>(value.tableId);
@@ -64,15 +57,14 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   const [tables, setTables] = useState<AirtableTable[] | null>(null);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [tablesError, setTablesError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(!!value.viewId);
 
-  // Fetch user's Airtable bases
   const {
     data: bases,
     isLoading: isLoadingBases,
     error: basesError,
   } = useQuery(listUserAirtableBases);
 
-  // Handle base selection
   const handleBaseChange = async (baseId: string) => {
     const base = bases?.find((b: AirtableBase) => b.id === baseId);
     setSelectedBaseId(baseId);
@@ -90,7 +82,6 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
       tableName: undefined,
     });
 
-    // Fetch tables for the selected base
     try {
       const fetchedTables = await getAirtableBaseTables({ baseId });
       setTables(fetchedTables as AirtableTable[]);
@@ -102,11 +93,9 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
     }
   };
 
-  // Fetch table schema when table is selected
   const handleTableChange = async (tableIdAndName: string) => {
     if (!selectedBaseId) return;
 
-    // Parse the combined value (format: "tableId|tableName")
     const [tableId, tableName] = tableIdAndName.split("|");
 
     setSelectedTableId(tableId);
@@ -137,7 +126,6 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
     }
   };
 
-  // Handle view ID change
   const handleViewIdChange = (newViewId: string) => {
     setViewId(newViewId);
     onChange({
@@ -149,7 +137,6 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
     });
   };
 
-  // Format field type for display
   const formatFieldType = (type: string): string => {
     const typeMap: Record<string, string> = {
       singleLineText: "Text",
@@ -157,8 +144,8 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
       number: "Number",
       percent: "Percent",
       currency: "Currency",
-      singleSelect: "Single Select",
-      multipleSelects: "Multiple Select",
+      singleSelect: "Select",
+      multipleSelects: "Multi-select",
       date: "Date",
       dateTime: "Date & Time",
       checkbox: "Checkbox",
@@ -171,33 +158,29 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
       rollup: "Rollup",
       count: "Count",
       lookup: "Lookup",
-      createdTime: "Created Time",
-      lastModifiedTime: "Last Modified",
+      createdTime: "Created",
+      lastModifiedTime: "Modified",
       createdBy: "Created By",
-      lastModifiedBy: "Last Modified By",
-      autoNumber: "Auto Number",
+      lastModifiedBy: "Modified By",
+      autoNumber: "Auto #",
       barcode: "Barcode",
       button: "Button",
       rating: "Rating",
     };
-
     return typeMap[type] || type;
   };
 
-  // No bases found state
   if (!isLoadingBases && (!bases || bases.length === 0)) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          No Airtable bases found. Please make sure your Airtable account is connected and you have
-          access to at least one base.
+          No Airtable bases found. Make sure your Airtable account is connected.
         </AlertDescription>
       </Alert>
     );
   }
 
-  // Error loading bases
   if (basesError) {
     return (
       <Alert variant="destructive">
@@ -212,282 +195,164 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   return (
     <div className="space-y-6">
       {/* Base Selection */}
-      <div className="space-y-3 animate-fade-in">
-        <Label htmlFor="airtable-base" className="text-sm font-medium flex items-center gap-2">
-          <div className="w-1 h-4 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
+      <div className="space-y-2">
+        <Label htmlFor="airtable-base" className="text-sm font-medium">
           Airtable Base
         </Label>
         {isLoadingBases ? (
-          <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent" />
-            <div className="flex flex-col items-center justify-center gap-3 relative">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-              <span className="text-sm font-mono text-orange-400">Fetching bases...</span>
-            </div>
+          <div className="h-11 flex items-center justify-center rounded-lg border border-border bg-muted/50">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading bases...</span>
           </div>
         ) : (
-          <div className="relative group">
-            <Select value={selectedBaseId} onValueChange={handleBaseChange}>
-              <SelectTrigger id="airtable-base" className="h-12 border-orange-500/20 hover:border-orange-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-orange-500/10">
-                <SelectValue placeholder="Choose your Airtable base..." />
-              </SelectTrigger>
-              <SelectContent className="backdrop-blur-xl bg-card/95 border-orange-500/20">
-                {bases?.map((base: AirtableBase) => (
-                  <SelectItem key={base.id} value={base.id} className="cursor-pointer">
-                    <div className="flex items-center gap-3 py-1">
-                      <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
-                        <img
-                          src="/airtable-icon.svg"
-                          alt="Airtable"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <span className="font-medium">{base.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedBaseId && (
-              <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 w-fit">
-                <div className="w-3 h-3 flex items-center justify-center">
-                  <img
-                    src="/airtable-icon.svg"
-                    alt="Airtable"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <span className="text-xs font-mono text-foreground">
-                  {bases?.find((b: AirtableBase) => b.id === selectedBaseId)?.name}
-                </span>
-              </div>
-            )}
-          </div>
+          <Select value={selectedBaseId} onValueChange={handleBaseChange}>
+            <SelectTrigger id="airtable-base" className="h-11">
+              <SelectValue placeholder="Select a base" />
+            </SelectTrigger>
+            <SelectContent>
+              {bases?.map((base: AirtableBase) => (
+                <SelectItem key={base.id} value={base.id}>
+                  <div className="flex items-center gap-2">
+                    <img src="/airtable-icon.svg" alt="" className="w-4 h-4" />
+                    <span>{base.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </div>
 
       {/* Table Selection */}
       {selectedBaseId && (
-        <div className="space-y-3 animate-fade-in">
-          <Label htmlFor="airtable-table" className="text-sm font-medium flex items-center gap-2">
-            <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
-            Airtable Table
+        <div className="space-y-2">
+          <Label htmlFor="airtable-table" className="text-sm font-medium">
+            Table
           </Label>
           {isLoadingTables ? (
-            <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-              <div className="flex flex-col items-center justify-center gap-3 relative">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                <span className="text-sm font-mono text-blue-400">Loading tables...</span>
-              </div>
+            <div className="h-11 flex items-center justify-center rounded-lg border border-border bg-muted/50">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading tables...</span>
             </div>
           ) : tablesError ? (
-            <Alert variant="destructive" className="border-red-500/50 bg-red-500/5">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{tablesError}</AlertDescription>
             </Alert>
           ) : tables && tables.length > 0 ? (
-            <>
-              <div className="relative group">
-                <Select
-                  value={selectedTableId}
-                  onValueChange={(value) => handleTableChange(value)}
-                >
-                  <SelectTrigger id="airtable-table" className="h-12 border-blue-500/20 hover:border-blue-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-500/10">
-                    <SelectValue placeholder="Choose your table..." />
-                  </SelectTrigger>
-                  <SelectContent className="backdrop-blur-xl bg-card/95 border-blue-500/20">
-                    {tables.map((table: AirtableTable) => (
-                      <SelectItem key={table.id} value={`${table.id}|${table.name}`} className="cursor-pointer">
-                        <div className="flex items-center gap-3 py-1">
-                          <div className="w-8 h-8 rounded-lg bg-white dark:bg-white flex items-center justify-center shadow-md p-1">
-                            <img
-                              src="/airtable-icon.svg"
-                              alt="Airtable Table"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <span className="font-medium">{table.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedTableId && (
-                  <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 w-fit">
-                    <Table className="h-3 w-3 text-blue-400" />
-                    <span className="text-xs font-mono text-foreground">
-                      {tables.find((t: AirtableTable) => t.id === selectedTableId)?.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </>
+            <Select value={selectedTableId} onValueChange={handleTableChange}>
+              <SelectTrigger id="airtable-table" className="h-11">
+                <SelectValue placeholder="Select a table" />
+              </SelectTrigger>
+              <SelectContent>
+                {tables.map((table: AirtableTable) => (
+                  <SelectItem key={table.id} value={`${table.id}|${table.name}`}>
+                    <div className="flex items-center gap-2">
+                      <Table className="w-4 h-4 text-muted-foreground" />
+                      <span>{table.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
-            <Alert className="border-yellow-500/50 bg-yellow-500/5">
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-              <AlertDescription className="text-yellow-600 dark:text-yellow-400">
-                No tables found in this base.
-              </AlertDescription>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>No tables found in this base.</AlertDescription>
             </Alert>
           )}
         </div>
       )}
 
-      {/* View ID Input (Optional) */}
+      {/* Advanced Options - Progressive Disclosure */}
       {selectedTableId && (
-        <div className="space-y-3 animate-fade-in">
-          <Label htmlFor="airtable-view-id" className="text-sm font-medium flex items-center gap-2">
-            <div className="w-1 h-4 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
-            View ID (Optional)
-          </Label>
-          <div className="space-y-2">
-            <div className="relative group">
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+            Advanced options
+          </button>
+
+          {showAdvanced && (
+            <div className="space-y-2 pl-5 border-l-2 border-border">
+              <Label htmlFor="airtable-view-id" className="text-sm font-medium">
+                View ID <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
               <Input
                 id="airtable-view-id"
                 type="text"
-                placeholder="viw... (optional - for exact row order)"
+                placeholder="viw..."
                 value={viewId || ""}
                 onChange={(e) => handleViewIdChange(e.target.value)}
-                className="h-12 border-purple-500/20 hover:border-purple-500/40 bg-card/50 backdrop-blur-sm transition-all duration-300 group-hover:shadow-lg group-hover:shadow-purple-500/10 pl-12"
+                className="h-11"
               />
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center pointer-events-none">
-                <Eye className="h-4 w-4 text-white" />
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Add a view ID to sync records in a specific order. Find it in your Airtable URL.
+              </p>
             </div>
-            <Alert className="border-purple-500/30 bg-purple-500/5">
-              <Eye className="h-4 w-4 text-purple-400" />
-              <AlertDescription className="text-xs text-muted-foreground">
-                <strong className="text-purple-400">Pro tip:</strong> Add your Airtable view ID (starts with "viw") to sync records in the exact order they appear in your view.
-                Find it in your Airtable URL: <code className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono text-xs">https://airtable.com/.../viw...</code>
-                {!viewId && <span className="block mt-1">Leave blank to sort alphabetically by the primary field.</span>}
-              </AlertDescription>
-            </Alert>
-            {viewId && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 w-fit">
-                <Eye className="h-3 w-3 text-purple-400" />
-                <span className="text-xs font-mono text-foreground">{viewId}</span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      {/* Table Schema Preview */}
+      {/* Schema Loading */}
       {isLoadingSchema && (
-        <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm p-8 overflow-hidden animate-fade-in">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
-          <div className="flex flex-col items-center justify-center gap-3 relative">
-            <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
-            <span className="text-sm font-mono text-cyan-400">Loading table schema...</span>
-          </div>
+        <div className="flex items-center justify-center py-8 rounded-lg border border-border bg-muted/30">
+          <Loader2 className="h-5 w-5 animate-spin text-cyan-500" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading fields...</span>
         </div>
       )}
 
       {schemaError && (
-        <Alert variant="destructive" className="border-red-500/50 bg-red-500/5 animate-fade-in">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{schemaError}</AlertDescription>
         </Alert>
       )}
 
+      {/* Schema Preview - Clean Table */}
       {tableSchema && !isLoadingSchema && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
-            <Label className="text-sm font-medium">Field Schema</Label>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Fields Preview</Label>
+            <span className="text-xs text-muted-foreground">
+              {tableSchema.fields.length} fields
+            </span>
           </div>
-          {tableSchema.description && (
-            <div className="px-4 py-2.5 rounded-lg bg-cyan-500/5 border border-cyan-500/20">
-              <p className="text-xs text-muted-foreground">{tableSchema.description}</p>
-            </div>
-          )}
 
-          <div className="relative rounded-xl border border-cyan-500/20 bg-card/50 backdrop-blur-sm overflow-hidden group">
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-            <div className="max-h-96 overflow-auto relative">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-muted/95 backdrop-blur-sm border-b border-cyan-500/10">
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="max-h-64 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 sticky top-0">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Field Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Description
-                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Field</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Type</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
-                  {tableSchema.fields.map((field: AirtableField, index: number) => (
-                    <tr
-                      key={field.id}
-                      className="hover:bg-cyan-500/5 transition-colors duration-200"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <td className="px-4 py-3 text-sm font-medium">
+                <tbody className="divide-y divide-border">
+                  {tableSchema.fields.map((field: AirtableField) => (
+                    <tr key={field.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          {field.name}
+                          <span className="font-medium">{field.name}</span>
                           {field.id === tableSchema.primaryFieldId && (
-                            <span className="px-2 py-0.5 text-xs font-mono bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded">
-                              PRIMARY
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                              Primary
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className="px-2 py-1 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-mono">
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs text-muted-foreground">
                           {formatFieldType(field.type)}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {field.description || "—"}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="border-t border-cyan-500/10 bg-muted/50 backdrop-blur-sm px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <p className="text-xs font-mono text-muted-foreground">
-                  {tableSchema.fields.length} field{tableSchema.fields.length !== 1 ? "s" : ""} available for sync
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Helper Text */}
-      {!selectedBaseId && (
-        <div className="relative rounded-xl border border-dashed border-cyan-500/20 bg-card/30 backdrop-blur-sm p-6 overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.02]">
-            <div
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, currentColor 1px, transparent 1px),
-                  linear-gradient(to bottom, currentColor 1px, transparent 1px)
-                `,
-                backgroundSize: '30px 30px',
-              }}
-              className="w-full h-full"
-            />
-          </div>
-          <div className="relative flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
-              <Database className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">Ready to connect</p>
-              <p className="text-xs text-muted-foreground">
-                Select an Airtable base from the dropdown above to view available tables and begin mapping fields.
-              </p>
             </div>
           </div>
         </div>
