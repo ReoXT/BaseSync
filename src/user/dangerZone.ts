@@ -1,5 +1,7 @@
 import type { ExportUserData, DeleteAccount } from 'wasp/server/operations';
 import { HttpError } from 'wasp/server';
+import { verifyPassword } from 'wasp/auth/password';
+import { stripeClient } from '../payment/stripe/stripeClient';
 
 // ============================================================================
 // EXPORT USER DATA (GDPR Compliance)
@@ -175,9 +177,8 @@ export const deleteAccount: DeleteAccount<DeleteAccountInput, void> = async (
 
   // Verify password
   try {
-    const passwordUtils = await import('wasp/auth/password');
     // verifyPassword throws if password is invalid, so if it doesn't throw, password is valid
-    await passwordUtils.verifyPassword(
+    await verifyPassword(
       emailIdentity.providerUserId,
       password
     );
@@ -189,9 +190,6 @@ export const deleteAccount: DeleteAccount<DeleteAccountInput, void> = async (
   // Cancel Stripe subscription if active
   if (user.subscriptionStatus === 'active' && user.paymentProcessorUserId) {
     try {
-      // Import Stripe client
-      const { stripeClient } = await import('../payment/stripe/stripeClient');
-
       // Get customer's subscriptions
       const subscriptions = await stripeClient.subscriptions.list({
         customer: user.paymentProcessorUserId,

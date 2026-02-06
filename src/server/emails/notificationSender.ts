@@ -22,7 +22,7 @@ import { PaymentPlanId } from '../../payment/plans';
 // Configuration
 // ============================================================================
 
-const APP_URL = process.env.WASP_WEB_CLIENT_URL || 'http://localhost:3000';
+const APP_URL = process.env.WASP_WEB_CLIENT_URL || 'https://basesync.app';
 const PRICING_URL = `${APP_URL}/pricing`;
 const DASHBOARD_URL = `${APP_URL}/dashboard`;
 

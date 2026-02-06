@@ -7,6 +7,7 @@ import {
   initiateGoogleAuth,
   disconnectAirtable,
   disconnectGoogle,
+  sendTestEmails,
 } from "wasp/client/operations";
 
 import {
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "wasp/client/auth";
 import { Button } from "../client/components/ui/button";
 import {
   Card,
@@ -35,9 +37,12 @@ import {
 
 export default function DemoAppPage() {
   const navigate = useNavigate();
+  const { data: user } = useAuth();
   const { data: airtableStatus, isLoading: airtableLoading } = useQuery(getAirtableConnectionStatus);
   const { data: googleStatus, isLoading: googleLoading } = useQuery(getGoogleConnectionStatus);
   const { data: syncConfigs, isLoading: syncConfigsLoading } = useQuery(getUserSyncConfigs);
+  const [testEmailTo, setTestEmailTo] = useState("oretobiloba@gmail.com");
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
   const bothConnected = airtableStatus?.isConnected && googleStatus?.isConnected;
   const isLoading = airtableLoading || googleLoading || syncConfigsLoading;
@@ -60,6 +65,19 @@ export default function DemoAppPage() {
     if (diffHours < 24) return `${diffHours}h ago`;
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
+  };
+
+  const handleSendTestEmails = async () => {
+    if (!testEmailTo) return;
+    try {
+      setIsSendingTestEmail(true);
+      await sendTestEmails({ to: testEmailTo });
+      alert(`Sent test emails to ${testEmailTo}`);
+    } catch (error: any) {
+      alert(error?.message || "Failed to send test emails");
+    } finally {
+      setIsSendingTestEmail(false);
+    }
   };
 
   return (
@@ -192,6 +210,37 @@ export default function DemoAppPage() {
               <EmptySyncConfigsList bothConnected={bothConnected} isLoading={isLoading} />
             )}
           </div>
+
+          {user?.isAdmin && (
+            <div className="mt-10">
+              <Card className="border-dashed border-cyan-500/30 bg-card/70 backdrop-blur-sm">
+                <CardContent className="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">Admin: Send Test Emails</div>
+                    <div className="text-xs text-muted-foreground">
+                      Sends all email templates (auth + notifications) to the address below.
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <input
+                      type="email"
+                      value={testEmailTo}
+                      onChange={(e) => setTestEmailTo(e.target.value)}
+                      className="h-10 w-full md:w-64 rounded-md border border-border/60 bg-card/60 px-3 text-sm"
+                      placeholder="email@example.com"
+                    />
+                    <Button
+                      onClick={handleSendTestEmails}
+                      disabled={isSendingTestEmail || !testEmailTo}
+                      className="h-10"
+                    >
+                      {isSendingTestEmail ? "Sending..." : "Send"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>

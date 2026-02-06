@@ -63,7 +63,22 @@
       "Bash(npx rollup:*)",
       "Bash(killall:*)",
       "Bash(./scripts/patch-rollup-config.sh:*)",
-      "Bash(npm run db:migrate-dev:*)"
+      "Bash(npm run db:migrate-dev:*)",
+      "Bash(wasp deploy railway:*)",
+      "Bash(railway status:*)",
+      "Bash(railway service:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway add:*)",
+      "Bash(railway up:*)",
+      "Bash(railway run npx prisma migrate deploy:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:npUOhGMmwAWWYDDAAfCdNswtptLcYPvJ@ballast.proxy.rlwy.net:56481/railway\" npx prisma migrate deploy:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway domain:*)",
+      "Bash(railway whoami:*)",
+      "Bash(open:*)",
+      "Bash(railway logout:*)",
+      "Bash(railway login:*)",
+      "Bash(brew upgrade:*)"
     ]
   }
 }

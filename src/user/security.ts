@@ -1,5 +1,6 @@
 import type { ChangePassword } from 'wasp/server/operations';
-import { HttpError } from 'wasp/server';
+import { HttpError, prisma } from 'wasp/server';
+import { hashPassword, verifyPassword } from 'wasp/auth/password';
 
 // ============================================================================
 // CHANGE PASSWORD
@@ -61,16 +62,14 @@ export const changePassword: ChangePassword<ChangePasswordInput, void> = async (
   let hashedNewPassword: string;
 
   try {
-    const passwordUtils = await import('wasp/auth/password');
-
     // Verify current password (throws if invalid)
-    await passwordUtils.verifyPassword(
+    await verifyPassword(
       emailIdentity.providerUserId,
       currentPassword
     );
 
     // Hash new password
-    hashedNewPassword = await passwordUtils.hashPassword(newPassword);
+    hashedNewPassword = await hashPassword(newPassword);
   } catch (error: any) {
     console.error('Password operation failed:', error);
     if (error.message?.includes('Invalid password')) {
@@ -81,8 +80,6 @@ export const changePassword: ChangePassword<ChangePasswordInput, void> = async (
 
   // Update password in AuthIdentity using the composite key
   // AuthIdentity uses @@id([providerName, providerUserId]) so we need direct Prisma access
-  const { prisma } = await import('wasp/server');
-
   await prisma.authIdentity.updateMany({
     where: {
       providerName: 'email',

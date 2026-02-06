@@ -504,6 +504,11 @@ action clearReauthFlags {
   entities: [User, AirtableConnection, GoogleSheetsConnection]
 }
 
+action sendTestEmails {
+  fn: import { sendTestEmails } from "@src/server/emails/testSender",
+  entities: [User, SyncConfig, SyncLog, UsageStats]
+}
+
 query getUserSyncConfigs {
   fn: import { getUserSyncConfigs } from "@src/server/queries/syncConfig",
   entities: [User, SyncConfig]
