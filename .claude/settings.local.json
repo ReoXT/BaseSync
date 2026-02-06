@@ -78,7 +78,14 @@
       "Bash(open:*)",
       "Bash(railway logout:*)",
       "Bash(railway login:*)",
-      "Bash(brew upgrade:*)"
+      "Bash(brew upgrade:*)",
+      "Bash(railway link:*)",
+      "Bash(railway run:*)",
+      "Bash(railway redeploy:*)",
+      "Bash(REACT_APP_API_URL=https://basesync-server-production.up.railway.app npm run build:*)",
+      "Bash(railway unlink:*)",
+      "Bash(railway vars:*)",
+      "Bash(python3:*)"
     ]
   }
 }
