@@ -5,7 +5,8 @@
  * Uses Wasp's emailSender for delivery and integrates with usage tracking.
  */
 
-import { emailSender } from 'wasp/server/email';
+// Using Resend HTTP API instead of Wasp's SMTP emailSender (Railway blocks SMTP)
+import { resendEmailSender as emailSender } from '../email/resendEmailSender';
 import type { User } from 'wasp/entities';
 import { prisma } from 'wasp/server';
 import {

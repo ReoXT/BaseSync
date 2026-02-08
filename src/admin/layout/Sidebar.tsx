@@ -1,4 +1,6 @@
 import {
+  Activity,
+  Database,
   LayoutDashboard,
   Settings,
   Users,
@@ -84,7 +86,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </h3>
 
             <ul className="mb-6 flex flex-col gap-1.5">
-              {/* <!-- Menu Item Dashboard --> */}
+              {/* <!-- Menu Item Overview --> */}
               <NavLink
                 to="/admin"
                 end
@@ -98,15 +100,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 }
               >
                 <LayoutDashboard />
-                Analytics
+                Overview
               </NavLink>
-              {/* <!-- Menu Item Dashboard --> */}
+              {/* <!-- Menu Item Overview --> */}
 
               {/* <!-- Menu Item Users --> */}
               <li>
                 <NavLink
                   to="/admin/users"
-                  end
                   className={({ isActive }) =>
                     cn(
                       "text-muted-foreground hover:bg-accent hover:text-accent-foreground group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium duration-300 ease-in-out",
@@ -122,11 +123,48 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </li>
               {/* <!-- Menu Item Users --> */}
 
+              {/* <!-- Menu Item Sync Monitor --> */}
+              <li>
+                <NavLink
+                  to="/admin/sync-monitor"
+                  className={({ isActive }) =>
+                    cn(
+                      "text-muted-foreground hover:bg-accent hover:text-accent-foreground group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium duration-300 ease-in-out",
+                      {
+                        "bg-accent text-accent-foreground": isActive,
+                      },
+                    )
+                  }
+                >
+                  <Activity />
+                  Sync Monitor
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item Sync Monitor --> */}
+
+              {/* <!-- Menu Item Database --> */}
+              <li>
+                <NavLink
+                  to="/admin/database"
+                  className={({ isActive }) =>
+                    cn(
+                      "text-muted-foreground hover:bg-accent hover:text-accent-foreground group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium duration-300 ease-in-out",
+                      {
+                        "bg-accent text-accent-foreground": isActive,
+                      },
+                    )
+                  }
+                >
+                  <Database />
+                  Database
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item Database --> */}
+
               {/* <!-- Menu Item Settings --> */}
               <li>
                 <NavLink
                   to="/admin/settings"
-                  end
                   className={({ isActive }) =>
                     cn(
                       "text-muted-foreground hover:bg-accent hover:text-accent-foreground group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium duration-300 ease-in-out",

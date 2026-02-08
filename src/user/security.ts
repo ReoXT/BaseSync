@@ -58,11 +58,20 @@ export const changePassword: ChangePassword<ChangePasswordInput, void> = async (
     throw new HttpError(400, 'Email authentication not set up for this account');
   }
 
+  // Validate that we have a stored password hash
+  if (!emailIdentity.providerUserId || emailIdentity.providerUserId.trim() === '') {
+    console.error('❌ Missing password hash for user:', user.id);
+    throw new HttpError(500, 'Password data is missing. Please try resetting your password instead.');
+  }
+
+  console.log('🔐 Password change attempt for user:', user.id);
+
   // Import Wasp's password utilities and Prisma client
   let hashedNewPassword: string;
 
   try {
-    // Verify current password (throws if invalid)
+    // verifyPassword expects (hashedPassword, plainPassword)
+    // emailIdentity.providerUserId contains the hashed password
     await verifyPassword(
       emailIdentity.providerUserId,
       currentPassword
@@ -72,8 +81,12 @@ export const changePassword: ChangePassword<ChangePasswordInput, void> = async (
     hashedNewPassword = await hashPassword(newPassword);
   } catch (error: any) {
     console.error('Password operation failed:', error);
-    if (error.message?.includes('Invalid password')) {
+    // Check for specific error messages
+    if (error.message?.includes('Invalid password') || error.message?.includes('does not match')) {
       throw new HttpError(400, 'Current password is incorrect');
+    }
+    if (error.code === 'InvalidArg' || error.message?.includes('missing field')) {
+      throw new HttpError(500, 'Password verification error. Please contact support.');
     }
     throw new HttpError(500, 'Password management failed');
   }

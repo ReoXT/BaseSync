@@ -85,7 +85,14 @@
       "Bash(REACT_APP_API_URL=https://basesync-server-production.up.railway.app npm run build:*)",
       "Bash(railway unlink:*)",
       "Bash(railway vars:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(dig:*)",
+      "Bash(nslookup:*)",
+      "Bash(grep:*)",
+      "Bash(for:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

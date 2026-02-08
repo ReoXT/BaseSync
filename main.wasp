@@ -5,6 +5,10 @@ app BaseSync {
 
   title: "BaseSync",
 
+  server: {
+    setupFn: import serverSetup from "@src/server/serverSetup"
+  },
+
   head: [
     "<link rel='icon' type='image/svg+xml' href='/favicon.svg' />",
     "<meta charset='utf-8' />",
@@ -39,7 +43,7 @@ app BaseSync {
       email: {
         fromField: {
           name: "BaseSync",
-          email: "me@example.com"
+          email: "noreply@basesync.app"
         },
         emailVerification: {
           clientRoute: EmailVerificationRoute,
@@ -81,9 +85,9 @@ app BaseSync {
   },
 
   emailSender: {
-    // NOTE: Using SMTP for production-ready builds
-    //   Configure SMTP settings via environment variables in .env.server
-    //   For production, use SendGrid or Mailgun for better deliverability
+    // NOTE: Configured as SMTP for Wasp, but OVERRIDDEN at runtime with Resend HTTP API
+    //   See src/server/serverSetup.ts for the override
+    //   No actual SMTP used - pure HTTP API (Railway-friendly)
     provider: SMTP,
     defaultFrom: {
       name: "BaseSync",
@@ -319,22 +323,113 @@ job dailyStatsJob {
 //#endregion
 
 //#region Admin Dashboard
-route AdminRoute { path: "/admin", to: AnalyticsDashboardPage }
-page AnalyticsDashboardPage {
+// Admin Overview Page
+route AdminRoute { path: "/admin", to: AdminOverviewPage }
+page AdminOverviewPage {
   authRequired: true,
-  component: import AnalyticsDashboardPage from "@src/admin/dashboards/analytics/AnalyticsDashboardPage"
+  component: import AdminOverviewPage from "@src/admin/dashboards/overview/OverviewPage"
 }
 
+// Admin Users Page
 route AdminUsersRoute { path: "/admin/users", to: AdminUsersPage }
 page AdminUsersPage {
   authRequired: true,
   component: import AdminUsers from "@src/admin/dashboards/users/UsersDashboardPage"
 }
 
+// Admin User Detail Page
+route AdminUserDetailRoute { path: "/admin/users/:userId", to: AdminUserDetailPage }
+page AdminUserDetailPage {
+  authRequired: true,
+  component: import AdminUserDetail from "@src/admin/dashboards/users/UserDetailPage"
+}
+
+// Admin Sync Monitor Page
+route AdminSyncMonitorRoute { path: "/admin/sync-monitor", to: AdminSyncMonitorPage }
+page AdminSyncMonitorPage {
+  authRequired: true,
+  component: import AdminSyncMonitor from "@src/admin/dashboards/sync-monitor/SyncMonitorPage"
+}
+
+// Admin Database Editor Page
+route AdminDatabaseRoute { path: "/admin/database", to: AdminDatabasePage }
+page AdminDatabasePage {
+  authRequired: true,
+  component: import AdminDatabase from "@src/admin/dashboards/database/DatabasePage"
+}
+
+// Admin Settings Page
 route AdminSettingsRoute { path: "/admin/settings", to: AdminSettingsPage }
 page AdminSettingsPage {
   authRequired: true,
   component: import AdminSettings from "@src/admin/elements/settings/SettingsPage"
+}
+
+// Admin Queries
+query getAdminOverviewStats {
+  fn: import { getAdminOverviewStats } from "@src/server/admin/operations",
+  entities: [User, SyncLog, SyncConfig, AirtableConnection, GoogleSheetsConnection]
+}
+
+query getRecentActivity {
+  fn: import { getRecentActivity } from "@src/server/admin/operations",
+  entities: [User, SyncLog, SyncConfig]
+}
+
+query searchUsers {
+  fn: import { searchUsers } from "@src/server/admin/operations",
+  entities: [User]
+}
+
+query getOnlineUsers {
+  fn: import { getOnlineUsers } from "@src/server/admin/operations",
+  entities: [User]
+}
+
+query getUserDetail {
+  fn: import { getUserDetail } from "@src/server/admin/operations",
+  entities: [User, AirtableConnection, GoogleSheetsConnection, SyncConfig, SyncLog, UsageStats]
+}
+
+query getActiveSyncs {
+  fn: import { getActiveSyncs } from "@src/server/admin/operations",
+  entities: [SyncLog, SyncConfig, User]
+}
+
+query getFailedSyncs {
+  fn: import { getFailedSyncs } from "@src/server/admin/operations",
+  entities: [SyncLog, SyncConfig, User]
+}
+
+query getSyncMonitor {
+  fn: import { getSyncMonitor } from "@src/server/admin/operations",
+  entities: [SyncLog, SyncConfig, User]
+}
+
+// Admin Actions
+action updateUser {
+  fn: import { updateUser } from "@src/server/admin/operations",
+  entities: [User]
+}
+
+action deleteUser {
+  fn: import { deleteUser } from "@src/server/admin/operations",
+  entities: [User, AirtableConnection, GoogleSheetsConnection, SyncConfig, SyncLog, UsageStats]
+}
+
+action pauseResumeSync {
+  fn: import { pauseResumeSync } from "@src/server/admin/operations",
+  entities: [SyncConfig]
+}
+
+action triggerManualSyncAdmin {
+  fn: import { triggerManualSyncAdmin } from "@src/server/admin/operations",
+  entities: [SyncConfig, SyncLog, User]
+}
+
+action forceRefreshUserToken {
+  fn: import { forceRefreshUserToken } from "@src/server/admin/operations",
+  entities: [AirtableConnection, GoogleSheetsConnection]
 }
 
 // Commented out: Extra admin components not needed for BaseSync MVP

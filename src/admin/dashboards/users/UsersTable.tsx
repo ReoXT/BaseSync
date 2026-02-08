@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "wasp/client/auth";
 import {
   getPaginatedUsers,
@@ -40,6 +41,7 @@ function AdminSwitch({ id, isAdmin }: Pick<User, "id" | "isAdmin">) {
 }
 
 const UsersTable = () => {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [emailFilter, setEmailFilter] = useState<string | undefined>(undefined);
   const [isAdminFilter, setIsAdminFilter] = useState<boolean | undefined>(
@@ -287,12 +289,13 @@ const UsersTable = () => {
           data.users.map((user) => (
             <div
               key={user.id}
-              className="py-4.5 grid grid-cols-9 gap-4 px-4 md:px-6"
+              className="py-4.5 grid grid-cols-9 gap-4 px-4 md:px-6 cursor-pointer hover:bg-accent/50 transition-colors"
+              onClick={() => navigate(`/admin/users/${user.id}`)}
             >
               <div className="col-span-3 flex items-center">
                 <div className="flex flex-col gap-1">
-                  <p className="text-foreground text-sm">{user.email}</p>
-                  <p className="text-foreground text-sm">{user.username}</p>
+                  <p className="text-foreground text-sm font-medium">{user.email}</p>
+                  <p className="text-muted-foreground text-xs">{user.username}</p>
                 </div>
               </div>
               <div className="col-span-2 flex items-center">
@@ -305,12 +308,12 @@ const UsersTable = () => {
                   {user.paymentProcessorUserId}
                 </p>
               </div>
-              <div className="col-span-1 flex items-center">
+              <div className="col-span-1 flex items-center" onClick={(e) => e.stopPropagation()}>
                 <div className="text-foreground text-sm">
                   <AdminSwitch {...user} />
                 </div>
               </div>
-              <div className="col-span-1 flex items-center">
+              <div className="col-span-1 flex items-center" onClick={(e) => e.stopPropagation()}>
                 <DropdownEditDelete />
               </div>
             </div>
