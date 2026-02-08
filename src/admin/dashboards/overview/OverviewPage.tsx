@@ -87,7 +87,7 @@ const OverviewPage = ({ user }: { user: AuthUser }) => {
                     {stats.syncs.uniqueFailedUsers} users)
                     {stats.alerts.errorTypes.length > 0 && (
                       <span className="ml-2 text-sm">
-                        • {stats.alerts.errorTypes.map(e => `${e.type} (${e.count})`).join(', ')}
+                        • {stats.alerts.errorTypes.map((e: any) => `${e.type} (${e.count})`).join(', ')}
                       </span>
                     )}
                   </span>

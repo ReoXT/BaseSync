@@ -92,7 +92,9 @@
       "Bash(grep:*)",
       "Bash(for:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(kill:*)",
+      "Bash(docker rm:*)"
     ]
   }
 }
