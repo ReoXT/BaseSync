@@ -26,7 +26,7 @@ import LoadingSpinner from "../../layout/LoadingSpinner";
 
 const SyncMonitorPage = ({ user }: { user: AuthUser }) => {
   const navigate = useNavigate();
-  const { data: syncData, isLoading } = useQuery(getSyncMonitor);
+  const { data: syncData, isLoading } = useQuery(getSyncMonitor) as any;
 
   if (isLoading || !syncData) {
     return (

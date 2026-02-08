@@ -29,8 +29,8 @@ const OverviewPage = ({ user }: { user: AuthUser }) => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const { data: stats, isLoading: statsLoading } = useQuery(getAdminOverviewStats);
-  const { data: recentActivity, isLoading: activityLoading } = useQuery(getRecentActivity);
+  const { data: stats, isLoading: statsLoading } = useQuery(getAdminOverviewStats) as any;
+  const { data: recentActivity, isLoading: activityLoading } = useQuery(getRecentActivity) as any;
 
   // Search users as they type
   const handleSearch = async (query: string) => {
@@ -42,8 +42,8 @@ const OverviewPage = ({ user }: { user: AuthUser }) => {
 
     setIsSearching(true);
     try {
-      const results = await searchUsers({ query });
-      setSearchResults(results);
+      const results = await searchUsers({ query }) as any;
+      setSearchResults(results || []);
     } catch (error) {
       console.error('Search error:', error);
     } finally {

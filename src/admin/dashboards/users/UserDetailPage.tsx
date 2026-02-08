@@ -59,7 +59,7 @@ import LoadingSpinner from "../../layout/LoadingSpinner";
 
 const UserDetailPage = ({ user }: { user: AuthUser }) => {
   const { userId } = useParams();
-  const { data: userDetail, isLoading, refetch } = useQuery(getUserDetail, { userId: userId! });
+  const { data: userDetail, isLoading, refetch } = useQuery(getUserDetail, { userId: userId! }) as any;
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
@@ -118,8 +118,8 @@ const UserDetailPage = ({ user }: { user: AuthUser }) => {
 
   const handleRefreshToken = async (service: 'airtable' | 'google') => {
     try {
-      const result = await forceRefreshUserToken({ userId: userId!, service });
-      alert(result.message);
+      const result = await forceRefreshUserToken({ userId: userId!, service }) as any;
+      alert(result?.message || 'Token refresh initiated');
       refetch();
     } catch (error: any) {
       alert(error.message || "Failed to refresh token");
