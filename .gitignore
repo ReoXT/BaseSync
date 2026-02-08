@@ -1,6 +1,12 @@
 node_modules/
 .wasp/
+
+# Environment files with credentials (NEVER commit these!)
 .env.server
+.env.development
+.env.production
+.env
+.env.local
 
 # Deployment notes with sensitive credentials
 DEPLOYMENT.md
