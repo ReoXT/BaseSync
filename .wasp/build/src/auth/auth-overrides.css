@@ -1,0 +1,218 @@
+/* BaseSync Auth Form Styling Overrides */
+/* This file overrides Wasp's default auth form styles to match the BaseSync design system */
+
+/* Override Wasp's CSS variables to use BaseSync colors */
+:root {
+  /* Brand colors - cyan/blue gradient theme */
+  --color-brand: #06b6d4;
+  /* cyan-500 */
+  --color-brandAccent: #3b82f6;
+  /* blue-500 */
+
+  /* Error states */
+  --color-errorBackground: rgba(248, 113, 113, 0.1);
+  /* red-400/10 */
+  --color-errorText: #f87171;
+  /* red-400 */
+  --color-formErrorText: #f87171;
+  /* red-400 */
+
+  /* Success states */
+  --color-successBackground: rgba(52, 211, 153, 0.1);
+  /* emerald-400/10 */
+  --color-successText: #34d399;
+  /* emerald-400 */
+
+  /* Submit button */
+  --color-submitButtonText: white;
+}
+
+/* Form container styling */
+.auth-form-container {
+  max-width: 100%;
+}
+
+/* Input fields - glassmorphic style */
+.auth-form-container input[type="email"],
+.auth-form-container input[type="password"],
+.auth-form-container input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--background) / 0.5);
+  backdrop-filter: blur(8px);
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.auth-form-container input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.auth-form-container input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: rgba(6, 182, 212, 0.5);
+  /* cyan-500/50 */
+  border-color: rgba(6, 182, 212, 0.5);
+}
+
+/* Labels */
+.auth-form-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+/* Submit button - gradient style */
+.auth-form-container button[type="submit"] {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(to right, #06b6d4, #3b82f6);
+  /* cyan-500 to blue-500 */
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.2);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth-form-container button[type="submit"]:hover:not(:disabled) {
+  background: linear-gradient(to right, #0891b2, #2563eb);
+  /* cyan-600 to blue-600 */
+  box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.4);
+  transform: scale(1.02);
+}
+
+.auth-form-container button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
+/* Error messages */
+.auth-form-container .error-message,
+.auth-form-container [class*="error"],
+.auth-form-container [class*="Error"] {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  /* red-400/30 */
+  background: rgba(248, 113, 113, 0.1);
+  /* red-400/10 */
+  padding: 0.75rem 1rem;
+  color: #f87171;
+  /* red-400 */
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Success messages */
+.auth-form-container .success-message,
+.auth-form-container [class*="success"],
+.auth-form-container [class*="Success"] {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  /* emerald-400/30 */
+  background: rgba(52, 211, 153, 0.1);
+  /* emerald-400/10 */
+  padding: 0.75rem 1rem;
+  color: #34d399;
+  /* emerald-400 */
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Form spacing */
+.auth-form-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.auth-form-container .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Social login buttons (if any) */
+.auth-form-container .social-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--card) / 0.5);
+  backdrop-filter: blur(8px);
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth-form-container .social-button:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+  background: hsl(var(--card) / 0.7);
+}
+
+/* Divider between social and email login */
+.auth-form-container .divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.auth-form-container .divider::before,
+.auth-form-container .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.auth-form-container .divider span {
+  padding: 0 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+/* Loading spinner for submit button */
+.auth-form-container .spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Remove default Wasp header text if it exists */
+.auth-form-container h2 {
+  display: none;
+}
+
+/* Ensure form takes full width */
+.auth-form-container>div {
+  width: 100%;
+}
