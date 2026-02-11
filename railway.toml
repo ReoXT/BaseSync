@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = ".wasp/build/Dockerfile"
+dockerfilePath = "Railway.dockerfile"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
