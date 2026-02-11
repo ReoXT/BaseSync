@@ -134,7 +134,9 @@
       "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync && timeout 120 railway up --detach:*)",
       "Bash(railway:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix Railway deployment - remove listUserSpreadsheets stale reference\n\nClean rebuild of .wasp/build directory to remove stale generated files\nthat referenced the removed listUserSpreadsheets query.\n\nChanges:\n- Deleted .wasp/build/server/src/queries/listUserSpreadsheets.ts\n- Deleted .wasp/build/server/src/routes/operations/listUserSpreadsheets.js\n- Updated all generated SDK files to remove listUserSpreadsheets imports\n- Added new urlParser and legal page files from source\n- Cleaned environment configuration files\n\nThis resolves the TypeScript build error during Railway deployment.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove E2E tests GitHub Actions workflow\n\nDeleted .github/workflows/e2e-tests.yml to prevent automatic test runs on push.\nTesting has been completed and automated CI/CD tests are no longer needed.\n\nChanges:\n- Removed E2E tests workflow that ran on push and PR\n- Removed multi-browser testing job\n- Cleaned up automated test infrastructure\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove remaining test utility scripts\n\nDeleted test-dropdown-validation.ts and grant-test-pro.mjs\nThese were development utility scripts no longer needed.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
