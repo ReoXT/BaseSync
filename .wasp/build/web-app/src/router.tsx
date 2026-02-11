@@ -24,6 +24,8 @@ import AdminUserDetailPage from '../../../../src/admin/dashboards/users/UserDeta
 import AdminSyncMonitorPage from '../../../../src/admin/dashboards/sync-monitor/SyncMonitorPage'
 import AdminDatabasePage from '../../../../src/admin/dashboards/database/DatabasePage'
 import AdminSettingsPage from '../../../../src/admin/elements/settings/SettingsPage'
+import PrivacyPolicyPage from '../../../../src/legal/PrivacyPolicyPage'
+import TermsOfServicePage from '../../../../src/legal/TermsOfServicePage'
 import { NotFoundPage } from '../../../../src/client/components/NotFoundPage'
 import AdminMessagesPage from '../../../../src/admin/dashboards/messages/MessagesPage'
 import AirtableCallbackPage from '../../../../src/client/auth-callback/AirtableCallbackPage'
@@ -56,6 +58,8 @@ export const routeNameToRouteComponent = {
   AdminSyncMonitorRoute: createAuthRequiredPage(AdminSyncMonitorPage),
   AdminDatabaseRoute: createAuthRequiredPage(AdminDatabasePage),
   AdminSettingsRoute: createAuthRequiredPage(AdminSettingsPage),
+  PrivacyPolicyRoute: PrivacyPolicyPage,
+  TermsOfServiceRoute: TermsOfServicePage,
   NotFoundRoute: NotFoundPage,
   AdminMessagesRoute: createAuthRequiredPage(AdminMessagesPage),
   AirtableCallbackRoute: createAuthRequiredPage(AirtableCallbackPage),

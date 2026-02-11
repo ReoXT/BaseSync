@@ -6,21 +6,19 @@
 
 import type { ServerSetupFn } from 'wasp/server';
 import { resendEmailSender } from './email/resendEmailSender';
+import { emailSender } from 'wasp/server/email';
 
 const serverSetup: ServerSetupFn = async () => {
   console.log('[Server Setup] Initializing BaseSync server...');
 
   // Override Wasp's emailSender module with Resend HTTP API
   try {
-    // Dynamic require to get the actual module at runtime
-    const emailModule = await import('wasp/server/email');
-
-    if (emailModule && emailModule.emailSender) {
+    if (emailSender) {
       console.log('[Server Setup] Overriding Wasp emailSender with Resend HTTP API');
 
       // Replace the send method
-      const originalSend = emailModule.emailSender.send;
-      emailModule.emailSender.send = async (args: any) => {
+      const originalSend = emailSender.send;
+      emailSender.send = async (args: any) => {
         console.log('[Email Override] Intercepted email send, using Resend HTTP API');
         return resendEmailSender.send(args);
       };

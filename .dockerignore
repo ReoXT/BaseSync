@@ -1,0 +1,40 @@
+# Docker Ignore - Exclude large files from Railway upload
+
+# CRITICAL: Exclude all node_modules (Railway will install them)
+node_modules/
+
+# Development files
+npm-debug.log
+.env.development
+.env.client
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Wasp development files
+.wasp/out/
+.wasp/.wasp*
+
+# Build artifacts we don't need
+.wasp/build/web-app/
+
+# Tests
+**/*.test.*
+**/*.spec.*
+
+# Docs
+*.md
+!README.md
+
+# Logs
+*.log
+logs/

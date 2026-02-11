@@ -233,10 +233,10 @@ export default function PricingPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Start with a 14-day free trial. No credit card required.
+              All plans include a 14-day free trial.
               <br />
               <span className="text-cyan-400 font-semibold">
-                Upgrade, downgrade, or cancel anytime.
+                Cancel anytime during your trial – no charge if you cancel.
               </span>
             </p>
 
@@ -584,7 +584,7 @@ function PricingCard({
                 </span>
               ) : (
                 <>
-                  {hasUser ? "Start Free Trial" : "Log in to Start Trial"}
+                  {hasUser ? "Subscribe Now" : "Log in to Subscribe"}
                   <span className="ml-2" aria-hidden="true">
                     →
                   </span>
@@ -655,7 +655,7 @@ function TrustSignals({ isVisible }: { isVisible: boolean }) {
               14-Day Free Trial
             </div>
             <div className="text-xs text-muted-foreground">
-              No credit card required
+              Cancel anytime
             </div>
           </div>
         </div>
@@ -735,7 +735,7 @@ function FAQTeaser({
     },
     {
       q: "What happens after my trial ends?",
-      a: "Your syncs will pause but your data stays safe. Subscribe to reactivate anytime.",
+      a: "Your subscription automatically activates and your payment method is charged. Cancel anytime during the trial to avoid charges.",
     },
   ];
 

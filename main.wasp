@@ -444,6 +444,18 @@ action forceRefreshUserToken {
 //   component: import AdminUI from "@src/admin/elements/ui-elements/ButtonsPage"
 // }
 
+//#region Legal Pages
+route PrivacyPolicyRoute { path: "/privacy", to: PrivacyPolicyPage }
+page PrivacyPolicyPage {
+  component: import PrivacyPolicyPage from "@src/legal/PrivacyPolicyPage"
+}
+
+route TermsOfServiceRoute { path: "/terms", to: TermsOfServicePage }
+page TermsOfServicePage {
+  component: import TermsOfServicePage from "@src/legal/TermsOfServicePage"
+}
+//#endregion
+
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {
   component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
@@ -519,8 +531,11 @@ action disconnectGoogle {
   entities: [User, GoogleSheetsConnection]
 }
 
-query listUserSpreadsheets {
-  fn: import { listUserSpreadsheets } from "@src/server/google/queries",
+// NOTE: listUserSpreadsheets query removed to avoid Google Drive API and CASA assessment
+// Users will paste spreadsheet URLs directly instead of browsing Drive
+
+query validateSpreadsheetUrl {
+  fn: import { validateSpreadsheetUrl } from "@src/server/google/queries",
   entities: [User, GoogleSheetsConnection]
 }
 
@@ -540,7 +555,7 @@ page AirtableCallbackPage {
   component: import AirtableCallbackPage from "@src/client/auth-callback/AirtableCallbackPage"
 }
 
-route GoogleCallbackRoute { path: "/auth/google/callback", to: GoogleCallbackPage }
+route GoogleCallbackRoute { path: "/oauth/google/callback", to: GoogleCallbackPage }
 page GoogleCallbackPage {
   authRequired: true,
   component: import GoogleCallbackPage from "@src/client/auth-callback/GoogleCallbackPage"

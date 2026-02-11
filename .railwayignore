@@ -1,0 +1,28 @@
+# Railway Ignore - Exclude large files to speed up upload
+
+# Development files
+.wasp/out/
+node_modules/
+.DS_Store
+*.log
+
+# Wasp development files
+.wasp/.wasp*
+.wasp/build/web-app/node_modules/
+.wasp/build/node_modules/
+
+# Git files
+.git/
+.github/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

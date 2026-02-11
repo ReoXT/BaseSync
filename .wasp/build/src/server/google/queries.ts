@@ -1,33 +1,36 @@
 /**
  * Wasp queries for Google Sheets data access
  * These functions fetch data from Google Sheets on behalf of authenticated users
+ *
+ * NOTE: Drive API query (listUserSpreadsheets) removed to avoid CASA assessment.
+ * Users will paste spreadsheet URLs directly.
  */
 
 import type { User, GoogleSheetsConnection } from 'wasp/entities';
 import type {
-  ListUserSpreadsheets,
   GetSpreadsheetSheets,
   GetSheetColumnHeaders,
+  ValidateSpreadsheetUrl,
 } from 'wasp/server/operations';
 import { getGoogleSheetsAccessToken } from './auth';
 import * as googleClient from './client';
+import { parseGoogleSheetUrl } from './urlParser';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type ListUserSpreadsheetsInput = void;
-type ListUserSpreadsheetsOutput = Array<{
-  id: string;
-  name: string;
-  createdTime?: string;
-  modifiedTime?: string;
-  webViewLink?: string;
-  owners?: Array<{
-    displayName: string;
-    emailAddress: string;
+type ValidateSpreadsheetUrlInput = {
+  url: string;
+};
+type ValidateSpreadsheetUrlOutput = {
+  spreadsheetId: string;
+  spreadsheetTitle: string;
+  sheets: Array<{
+    sheetId: number;
+    title: string;
   }>;
-}>;
+};
 
 type GetSpreadsheetSheetsInput = {
   spreadsheetId: string;
@@ -56,19 +59,25 @@ type GetSheetColumnHeadersOutput = {
 };
 
 // ============================================================================
-// Query: List User's Google Spreadsheets
+// Query: Validate Spreadsheet URL
 // ============================================================================
 
 /**
- * Lists all Google Spreadsheets accessible to the authenticated user
- * Automatically refreshes token if expired
+ * Validates a Google Sheets URL by parsing it and checking user has access
+ * Replaces the need to browse Drive - user pastes URL directly
  */
-export const listUserSpreadsheets: ListUserSpreadsheets<
-  ListUserSpreadsheetsInput,
-  ListUserSpreadsheetsOutput
-> = async (_args, context) => {
+export const validateSpreadsheetUrl: ValidateSpreadsheetUrl<
+  ValidateSpreadsheetUrlInput,
+  ValidateSpreadsheetUrlOutput
+> = async (args, context) => {
   if (!context.user) {
     throw new Error('User must be authenticated');
+  }
+
+  const { url } = args;
+
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    throw new Error('Please provide a valid Google Sheets URL');
   }
 
   // Check if user has Google Sheets connection
@@ -83,55 +92,54 @@ export const listUserSpreadsheets: ListUserSpreadsheets<
   }
 
   try {
+    // Parse the URL to extract spreadsheet ID
+    const parsed = parseGoogleSheetUrl(url.trim());
+
     // Get access token (automatically refreshes if expired)
     const accessToken = await getGoogleSheetsAccessToken(
       context.user.id,
       context.entities.GoogleSheetsConnection as any
     );
 
-    // Fetch spreadsheets from Google Drive
-    const spreadsheets = await googleClient.listSpreadsheets(accessToken);
+    // Validate spreadsheet exists and user has access
+    const spreadsheet = await googleClient.validateAndGetSpreadsheet(
+      accessToken,
+      parsed.spreadsheetId
+    );
 
-    // Return spreadsheet data
-    return spreadsheets.map((spreadsheet) => ({
-      id: spreadsheet.id,
-      name: spreadsheet.name,
-      createdTime: spreadsheet.createdTime,
-      modifiedTime: spreadsheet.modifiedTime,
-      webViewLink: spreadsheet.webViewLink,
-      owners: spreadsheet.owners,
-    }));
+    return {
+      spreadsheetId: spreadsheet.id,
+      spreadsheetTitle: spreadsheet.title,
+      sheets: spreadsheet.sheets,
+    };
   } catch (error) {
-    console.error('Failed to list Google Spreadsheets:', error);
+    console.error('Failed to validate Google Sheets URL:', error);
 
     // Provide user-friendly error messages
     if (error instanceof googleClient.GoogleSheetsError) {
-      if (error.isAuthError) {
-        throw new Error(
-          'Your Google connection has expired or lacks permissions. Please reconnect your Google account.'
-        );
-      }
-      if (error.isQuotaError) {
-        throw new Error(
-          'Google API quota exceeded. Please try again later or contact support.'
-        );
-      }
-      throw new Error(`Failed to fetch spreadsheets: ${error.message}`);
+      // Already has a user-friendly message from validateAndGetSpreadsheet
+      throw error;
     }
 
     if (error instanceof Error) {
+      // Wrap URL parsing errors in user-friendly messages
+      if (error.message.includes('Invalid') || error.message.includes('spreadsheet')) {
+        throw new Error(
+          'Invalid Google Sheets URL. Please check the URL and try again.'
+        );
+      }
+
       if (error.message.includes('refresh') || error.message.includes('token')) {
         throw new Error(
           'Your Google connection has expired. Please reconnect your Google account.'
         );
       }
-      if (error.message.includes('GOOGLE_SHEETS_CLIENT_ID')) {
-        throw new Error('Google Sheets integration is not configured. Please contact support.');
-      }
-      throw new Error(`Failed to fetch spreadsheets: ${error.message}`);
+
+      // Generic error - don't expose implementation details
+      throw new Error('Failed to validate spreadsheet. Please check the URL and try again.');
     }
 
-    throw new Error('Failed to fetch spreadsheets. Please try again.');
+    throw new Error('Failed to validate spreadsheet. Please try again.');
   }
 };
 

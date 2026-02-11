@@ -21,9 +21,9 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 
 // Required scopes for BaseSync
+// Only using spreadsheets scope to avoid Google CASA assessment requirements
 const REQUIRED_SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/drive.readonly',
 ];
 
 interface GoogleOAuthConfig {

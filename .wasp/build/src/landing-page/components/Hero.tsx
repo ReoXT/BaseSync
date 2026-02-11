@@ -79,6 +79,24 @@ export default function Hero() {
                 </WaspRouterLink>
               </Button>
             </div>
+
+            {/* Privacy Policy Link for Google OAuth Verification */}
+            <p className="mt-4 text-xs text-muted-foreground animate-fade-in-delayed-more">
+              By signing up, you agree to our{" "}
+              <WaspRouterLink
+                to={routes.TermsOfServiceRoute.to}
+                className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+              >
+                Terms of Service
+              </WaspRouterLink>
+              {" "}and{" "}
+              <WaspRouterLink
+                to={routes.PrivacyPolicyRoute.to}
+                className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+              >
+                Privacy Policy
+              </WaspRouterLink>
+            </p>
           </div>
 
           {/* Hero Visual */}

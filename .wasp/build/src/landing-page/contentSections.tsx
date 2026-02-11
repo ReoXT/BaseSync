@@ -143,19 +143,15 @@ export const faqs = [
   {
     id: 9,
     question: "Is there a free trial?",
-    answer: "Yes! All new users get a 14-day free trial with full Pro tier features (3 syncs, 5,000 records, 5-minute interval). No credit card required to start. Try it risk-free and see how much time BaseSync can save your team.",
+    answer: "Yes! All new users get a 14-day free trial with full Pro tier features (3 syncs, 5,000 records, 5-minute interval). You won't be charged until your trial ends. Cancel anytime during the trial at no cost.",
   },
 ];
 
 export const footerNavigation = {
-  app: [
-    { name: "Documentation", href: DocsUrl },
-    { name: "Blog", href: BlogUrl },
-  ],
+  app: [],
   company: [
-    { name: "About", href: "https://wasp.sh" },
-    { name: "Privacy", href: "#" },
-    { name: "Terms of Service", href: "#" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
 };
 

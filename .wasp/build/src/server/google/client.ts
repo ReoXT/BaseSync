@@ -8,19 +8,7 @@
 // Types - Google Sheets API
 // ============================================================================
 
-export interface GoogleSpreadsheet {
-  id: string;
-  name: string;
-  mimeType: string;
-  createdTime?: string;
-  modifiedTime?: string;
-  webViewLink?: string;
-  iconLink?: string;
-  owners?: Array<{
-    displayName: string;
-    emailAddress: string;
-  }>;
-}
+// NOTE: GoogleSpreadsheet type removed (was only used for Drive API listing)
 
 export interface GoogleSheet {
   properties: {
@@ -206,53 +194,9 @@ async function fetchWithRetry<T>(
 // ============================================================================
 
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
-const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 
-/**
- * Lists all spreadsheets accessible to the user via Google Drive API
- * Requires: drive.readonly or drive scope
- */
-export async function listSpreadsheets(accessToken: string): Promise<GoogleSpreadsheet[]> {
-  return fetchWithRetry(async () => {
-    // Query for Google Sheets files only
-    const query = "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false";
-    const fields =
-      'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink,iconLink,owners)';
-
-    const params = new URLSearchParams({
-      q: query,
-      fields: fields,
-      pageSize: '100', // Max allowed by API
-      orderBy: 'modifiedTime desc',
-    });
-
-    let allSpreadsheets: GoogleSpreadsheet[] = [];
-    let pageToken: string | undefined;
-
-    do {
-      if (pageToken) {
-        params.set('pageToken', pageToken);
-      }
-
-      const response = await fetch(`${DRIVE_API_BASE}/files?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await handleGoogleResponse<{
-        files: GoogleSpreadsheet[];
-        nextPageToken?: string;
-      }>(response);
-
-      allSpreadsheets = allSpreadsheets.concat(data.files);
-      pageToken = data.nextPageToken;
-    } while (pageToken);
-
-    return allSpreadsheets;
-  });
-}
+// NOTE: Drive API functions removed to avoid CASA assessment requirements.
+// Users will paste spreadsheet URLs directly instead of browsing Drive.
 
 /**
  * Gets spreadsheet metadata including all sheets
@@ -271,6 +215,164 @@ export async function getSpreadsheet(
     });
 
     return handleGoogleResponse<GoogleSpreadsheetMetadata>(response);
+  });
+}
+
+/**
+ * Validates that a spreadsheet exists and the user has access to it
+ * This replaces the need for Drive API browsing - validates access when user provides URL
+ *
+ * @param accessToken - Google OAuth access token
+ * @param spreadsheetId - The spreadsheet ID to validate
+ * @returns Simplified spreadsheet metadata with id, title, and sheets
+ * @throws GoogleSheetsError with user-friendly messages for 404, 403, or other errors
+ */
+export async function validateAndGetSpreadsheet(
+  accessToken: string,
+  spreadsheetId: string
+): Promise<{
+  id: string;
+  title: string;
+  sheets: Array<{ sheetId: number; title: string }>;
+}> {
+  return fetchWithRetry(async () => {
+    try {
+      const response = await fetch(`${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Handle specific HTTP error codes before generic error handling
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = (errorData as { error?: { message?: string; code?: number; status?: string } })
+          ?.error;
+        const statusCode = error?.code || response.status;
+
+        // 404 - Spreadsheet not found
+        if (statusCode === 404) {
+          throw new GoogleSheetsError(
+            'Spreadsheet not found. Please check the URL and make sure the spreadsheet exists and is shared with your Google account.',
+            404,
+            errorData,
+            false,
+            false
+          );
+        }
+
+        // 403 - No access permission
+        if (statusCode === 403) {
+          // Check if it's a permission issue specifically
+          const errorMessage = error?.message || '';
+          if (
+            errorMessage.toLowerCase().includes('permission') ||
+            errorMessage.toLowerCase().includes('access') ||
+            error?.status === 'PERMISSION_DENIED'
+          ) {
+            throw new GoogleSheetsError(
+              "You don't have access to this spreadsheet. Make sure it's shared with your Google account, or that the link sharing settings allow access.",
+              403,
+              errorData,
+              false,
+              true
+            );
+          }
+
+          // 403 could also be quota error
+          if (
+            errorMessage.toLowerCase().includes('quota') ||
+            errorMessage.toLowerCase().includes('rate limit') ||
+            error?.status === 'RESOURCE_EXHAUSTED'
+          ) {
+            throw new GoogleSheetsError(
+              'Google API quota exceeded. Please try again in a few moments.',
+              403,
+              errorData,
+              true,
+              false
+            );
+          }
+
+          // Generic 403
+          throw new GoogleSheetsError(
+            'Access forbidden. Please check your permissions for this spreadsheet.',
+            403,
+            errorData,
+            false,
+            true
+          );
+        }
+
+        // 401 - Authentication error
+        if (statusCode === 401) {
+          throw new GoogleSheetsError(
+            'Authentication failed. Please reconnect your Google account.',
+            401,
+            errorData,
+            false,
+            true
+          );
+        }
+
+        // 400 - Bad request (likely invalid spreadsheet ID format)
+        if (statusCode === 400) {
+          throw new GoogleSheetsError(
+            'Invalid spreadsheet ID format. Please check the URL and try again.',
+            400,
+            errorData,
+            false,
+            false
+          );
+        }
+
+        // Other errors - let generic handler deal with it
+        throw new GoogleSheetsError(
+          error?.message || `Google Sheets API error: ${response.status} ${response.statusText}`,
+          statusCode,
+          errorData,
+          false,
+          false
+        );
+      }
+
+      const metadata = (await response.json()) as GoogleSpreadsheetMetadata;
+
+      // Return simplified format
+      return {
+        id: metadata.spreadsheetId,
+        title: metadata.properties.title,
+        sheets: metadata.sheets.map((sheet) => ({
+          sheetId: sheet.properties.sheetId,
+          title: sheet.properties.title,
+        })),
+      };
+    } catch (error) {
+      // If it's already a GoogleSheetsError, re-throw it
+      if (error instanceof GoogleSheetsError) {
+        throw error;
+      }
+
+      // Network or other errors
+      if (error instanceof Error) {
+        throw new GoogleSheetsError(
+          `Failed to validate spreadsheet: ${error.message}`,
+          undefined,
+          undefined,
+          false,
+          false
+        );
+      }
+
+      throw new GoogleSheetsError(
+        'Failed to validate spreadsheet. Please try again.',
+        undefined,
+        undefined,
+        false,
+        false
+      );
+    }
   });
 }
 

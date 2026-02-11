@@ -6,6 +6,15 @@ node_modules/
 # Keep .wasp/build for Railway deployment
 # .wasp/build/
 
+# Keep folders for Railway deployment (copied from .wasp/build)
+# These are required by the Dockerfile
+# db/
+# sdk/
+# server/
+
+# Client deployment folder (temporary build artifact)
+client-dist/
+
 # Environment files with credentials (NEVER commit these!)
 .env.server
 .env.development

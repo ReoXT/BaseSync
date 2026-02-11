@@ -403,7 +403,7 @@
             "file",
             "../out/sdk/wasp/client/operations/queries/index.ts"
         ],
-        "a20afb0054ada56c4a46ec5c278f6745cc0a81c9905036e0ba795c657899b850"
+        "6022f69d97a0a02f8137350f467c1c882532f0f256c86cad26deab79ec02c537"
     ],
     [
         [
@@ -431,7 +431,7 @@
             "file",
             "../out/sdk/wasp/client/router/index.ts"
         ],
-        "7e2330d2fbb032c7726a07c8163a12139bd63f94ee46507e611c470e7ad2ed09"
+        "23dfd2ac9615afbdf50fb7635e7d388bf82c6d631ae2f31a7ccb8f70b3e6fe16"
     ],
     [
         [
@@ -760,21 +760,21 @@
             "file",
             "../out/sdk/wasp/server/operations/index.ts"
         ],
-        "468613a7457fa3747179efd50c63a267d8d4e46359ee5a9e18b738d89479e1b8"
+        "ed5e84d47a7f09b85c91400a9aaeef5e6434fa757b93c9f0f05ce46361ffc16f"
     ],
     [
         [
             "file",
             "../out/sdk/wasp/server/operations/queries/index.ts"
         ],
-        "79f8df07da5652a4df202550987bebfd3dff6ef87ee97153f0ce0d191f32f247"
+        "94828fb69cde1ffd86e6d80bf0f90c36cfbb89d0f6e347e96e12e52c9602ee99"
     ],
     [
         [
             "file",
             "../out/sdk/wasp/server/operations/queries/types.ts"
         ],
-        "e8f246d99c89a48c4f0b398d0b20d8ec368881757713e1f80e4f13693689cb7d"
+        "fc1bb73c73d0a61fe41ff13e57a8a3aaf745b222bb004d1d671cb65aad45725e"
     ],
     [
         [
@@ -1005,7 +1005,7 @@
             "file",
             "../out/sdk/wasp/src/analytics/stats.ts"
         ],
-        "1245ce5e95ad74655abea46bf75b8408e6e1a135392c34be4161df7036345797"
+        "b6ee9017aef370e909a1f4b4123c05fb4300d9fe893042d3abd9d4dd9ab6b9c6"
     ],
     [
         [
@@ -1376,7 +1376,7 @@
             "file",
             "../out/sdk/wasp/src/client/components/wizard/GoogleSheetsSelector.tsx"
         ],
-        "c9971acef4bebfa825c2c8b3a6728f495cab74d9bc5ed7ea65b1a18e4c283dd1"
+        "d80acfa5b2b90d22a4aee8569eb6d388d5a35e66abab0f181c9b60a7a077c8ae"
     ],
     [
         [
@@ -1733,7 +1733,7 @@
             "file",
             "../out/sdk/wasp/src/landing-page/LandingPage.tsx"
         ],
-        "293257de1abe30e446e81815d8e2e6ea18087042da7fe593a57fbd4bfb8ac607"
+        "765f13735c0bf62d368e26f666a0a1f29b9b8a0fe6e090e039d82eb41850ded8"
     ],
     [
         [
@@ -1775,14 +1775,14 @@
             "file",
             "../out/sdk/wasp/src/landing-page/components/Footer.tsx"
         ],
-        "c0a40abfbff9edc29822e00cf223f4679c839665cd524c41ea998da1a8d873cb"
+        "2a04f73f078d09f3296cf80e53b2991d4f4bac19db67c252ee96597eec0003e2"
     ],
     [
         [
             "file",
             "../out/sdk/wasp/src/landing-page/components/Hero.tsx"
         ],
-        "f3771c308e49b8fd6b0aa203a69ea1b65037f772131cd45c8cef43d66d16af86"
+        "681a971d305f5b66266446d09acf06e56c9d1b63d0d3bc48b872a7c975d6c54f"
     ],
     [
         [
@@ -1838,7 +1838,7 @@
             "file",
             "../out/sdk/wasp/src/landing-page/contentSections.tsx"
         ],
-        "13f3af567d518195eeb1d47fb569a4828bafbcbbd424bea9e8a2086f6a9845a8"
+        "eea7270a3b315314005dae1589797978f539bbee86ae56b81f9b0443d5ed691e"
     ],
     [
         [
@@ -1871,6 +1871,27 @@
     [
         [
             "file",
+            "../out/sdk/wasp/src/legal/PrivacyPolicyPage.tsx"
+        ],
+        "7674642f06832a3b5fc008dc27fa4f0f02c1bb0a4fc9c49f0438e1870f34898c"
+    ],
+    [
+        [
+            "file",
+            "../out/sdk/wasp/src/legal/TermsOfServicePage.tsx"
+        ],
+        "75323665f6a8c1c2c10180d95e7917795851b75210d99c65995e015d099c7702"
+    ],
+    [
+        [
+            "file",
+            "../out/sdk/wasp/src/lucide-react.d.ts"
+        ],
+        "3857c2e3a646655afbafa4885714e5333da872d2632e363c77cb1fed40bff3c9"
+    ],
+    [
+        [
+            "file",
             "../out/sdk/wasp/src/payment/CheckoutResultPage.tsx"
         ],
         "4b8df3222423c8df4ffee4e002028a553252b03ba8150326e837f1a57d065276"
@@ -1880,7 +1901,7 @@
             "file",
             "../out/sdk/wasp/src/payment/PricingPage.tsx"
         ],
-        "2a7e1ddc2d016b3d3643da3640db668429bec2b614d39eabfb697969a545b887"
+        "49bb13569d66c3986feea2a382e56296e88bb44de6d9290360047c2a20f8f709"
     ],
     [
         [
@@ -1964,7 +1985,7 @@
             "file",
             "../out/sdk/wasp/src/payment/polar/polarClient.ts"
         ],
-        "2317e48eb4444c0d2bea7fecf4aee52a954d361f5c56686ee204c144c5f72376"
+        "a3ca7729181a5c8c7d1565fa77f2686e592d5235a5c1040c9d17deb7ee49ef76"
     ],
     [
         [
@@ -1978,7 +1999,7 @@
             "file",
             "../out/sdk/wasp/src/payment/stripe/checkoutUtils.ts"
         ],
-        "cd4ff3e0b2871123f96a02860c33f3bc0e56b55e0ea95a1a6fbd47971e9d58b7"
+        "08fd0349b9f16a391629748296eaaa76520eea2e1b38d0cec633de42a052d167"
     ],
     [
         [
@@ -2153,14 +2174,14 @@
             "file",
             "../out/sdk/wasp/src/server/google/auth.ts"
         ],
-        "d55dcd89b9136c5b81bb46e5bcc845d1f8d86f68882c9217249126e4f6f15e01"
+        "aaba9f3adbabc177b7f2098c6497a53a720cbcff7d42b1da055a836d57a2dd45"
     ],
     [
         [
             "file",
             "../out/sdk/wasp/src/server/google/client.ts"
         ],
-        "0ee4f167a47f49709a2869b4d2718c3a7f9e551a7f154da671c09496e3e50e95"
+        "4c7e2570b4969f42bf14e671ed923b1701271061a4557870ce013c64c4986926"
     ],
     [
         [
@@ -2181,7 +2202,14 @@
             "file",
             "../out/sdk/wasp/src/server/google/queries.ts"
         ],
-        "7f51b724dd0c33dd0ad235a072fee6eb3308b7b0a0aa39e1ac28630ad71b6958"
+        "ceacb6e5d050ca76247462d94232d925fc772607903a2a65450d13a9e251089e"
+    ],
+    [
+        [
+            "file",
+            "../out/sdk/wasp/src/server/google/urlParser.ts"
+        ],
+        "6439f5701681deb38b942e30798c0baf29bfb9bf9c053fc8f51d0f169878d668"
     ],
     [
         [
@@ -2237,7 +2265,7 @@
             "file",
             "../out/sdk/wasp/src/server/serverSetup.ts"
         ],
-        "7c0300ef0f47d51b04670629c0dd207be1e0aa7f8a360ec30bb0e29ecf75cb1d"
+        "6a88c91967fd4807caf07a91ad784dae027fb43a1bf00169547f81c6b5d61b0f"
     ],
     [
         [
@@ -3033,16 +3061,16 @@
     [
         [
             "file",
-            "server/src/queries/listUserSpreadsheets.ts"
+            "server/src/queries/searchUsers.ts"
         ],
-        "e99dc71cb09c1ca567d89d578be7de6b9e36a06a373d53997291e48accd4ef25"
+        "6005cb661e1a33777056b91dd9950bf3b6652a7f151137ffdd139d42f832299f"
     ],
     [
         [
             "file",
-            "server/src/queries/searchUsers.ts"
+            "server/src/queries/validateSpreadsheetUrl.ts"
         ],
-        "6005cb661e1a33777056b91dd9950bf3b6652a7f151137ffdd139d42f832299f"
+        "51e17012cb4ca25cb25451c7147ad7b199bf691d32ae78bc0a136d4dacd968a4"
     ],
     [
         [
@@ -3322,7 +3350,7 @@
             "file",
             "server/src/routes/operations/index.js"
         ],
-        "95c753c4a40835b9a91c27ccfe9f0d72fdcee8c0039adb7be828d2e4efe88e9a"
+        "183b8e0aa33ba91cda510525191d68f0635c8706284593c5d5819fbc9213e061"
     ],
     [
         [
@@ -3344,13 +3372,6 @@
             "server/src/routes/operations/listUserAirtableBases.js"
         ],
         "a07db3bd1c885ed62b07a8ce708fa651854270a3b40683e6c2979eaeadd8c230"
-    ],
-    [
-        [
-            "file",
-            "server/src/routes/operations/listUserSpreadsheets.js"
-        ],
-        "97bd8f87bf3ba80cc4a58f22fdf0bfddea4b6cae1a3bd27ad47b57bf4533b0b7"
     ],
     [
         [
@@ -3449,6 +3470,13 @@
             "server/src/routes/operations/updateUsername.js"
         ],
         "0bd1a046c798a2805db8ff815b828c4c7f2ee2c4e456f1e09dad1955f67acfee"
+    ],
+    [
+        [
+            "file",
+            "server/src/routes/operations/validateSpreadsheetUrl.js"
+        ],
+        "1201b6ee6c370c44e2ba03ea802f48521a6448d17489a78cd286c0a791530ce5"
     ],
     [
         [
@@ -3672,7 +3700,7 @@
             "file",
             "web-app/src/router.tsx"
         ],
-        "a1f387493f7380691690349e700c7ba761120413b89c1ac437865aa3058a6f21"
+        "8256207ae376a42aecb9e49a156a3e2cd448dac2e4097bf6d80862d532a39a85"
     ],
     [
         [
