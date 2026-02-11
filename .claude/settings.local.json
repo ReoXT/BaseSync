@@ -132,7 +132,9 @@
       "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync:*)",
       "Bash(./deploy.sh:*)",
       "Bash(cd /Volumes/ReoXT/Cursor\\\\ Files/BaseSync && timeout 120 railway up --detach:*)",
-      "Bash(railway:*)"
+      "Bash(railway:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix Railway deployment - remove listUserSpreadsheets stale reference\n\nClean rebuild of .wasp/build directory to remove stale generated files\nthat referenced the removed listUserSpreadsheets query.\n\nChanges:\n- Deleted .wasp/build/server/src/queries/listUserSpreadsheets.ts\n- Deleted .wasp/build/server/src/routes/operations/listUserSpreadsheets.js\n- Updated all generated SDK files to remove listUserSpreadsheets imports\n- Added new urlParser and legal page files from source\n- Cleaned environment configuration files\n\nThis resolves the TypeScript build error during Railway deployment.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
     ]
   }
 }

@@ -1,0 +1,15 @@
+import { prisma } from 'wasp/server';
+import { triggerManualSync } from '../../../../../src/server/actions/sync';
+export default async function (args, context) {
+    return triggerManualSync(args, {
+        ...context,
+        entities: {
+            User: prisma.user,
+            AirtableConnection: prisma.airtableConnection,
+            GoogleSheetsConnection: prisma.googleSheetsConnection,
+            SyncConfig: prisma.syncConfig,
+            SyncLog: prisma.syncLog,
+        },
+    });
+}
+//# sourceMappingURL=triggerManualSync.js.map
