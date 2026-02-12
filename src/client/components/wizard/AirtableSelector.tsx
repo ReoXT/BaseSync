@@ -1,5 +1,5 @@
 import { AlertCircle, Loader2, Table } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { listUserAirtableBases, getAirtableTableSchema, getAirtableBaseTables, useQuery } from "wasp/client/operations";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Input } from "../ui/input";
@@ -49,7 +49,10 @@ interface AirtableField {
 
 export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
   const [selectedBaseId, setSelectedBaseId] = useState<string | undefined>(value.baseId);
-  const [selectedTableId, setSelectedTableId] = useState<string | undefined>(value.tableId);
+  // Store the full "id|name" format to match SelectItem values
+  const [selectedTableId, setSelectedTableId] = useState<string | undefined>(
+    value.tableId && value.tableName ? `${value.tableId}|${value.tableName}` : undefined
+  );
   const [viewId, setViewId] = useState<string | undefined>(value.viewId);
   const [tableSchema, setTableSchema] = useState<AirtableTableWithFields | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
@@ -97,7 +100,7 @@ export function AirtableSelector({ value, onChange }: AirtableSelectorProps) {
 
     const [tableId, tableName] = tableIdAndName.split("|");
 
-    setSelectedTableId(tableId);
+    setSelectedTableId(tableIdAndName); // Store the full "id|name" value
     setIsLoadingSchema(true);
     setSchemaError(null);
 

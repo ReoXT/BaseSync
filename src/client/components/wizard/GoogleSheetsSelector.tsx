@@ -38,7 +38,10 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [validatedSpreadsheet, setValidatedSpreadsheet] = useState<ValidatedSpreadsheet | null>(null);
-  const [selectedSheetId, setSelectedSheetId] = useState<string | undefined>(value.sheetId);
+  // Store the full "id|name" format to match SelectItem values
+  const [selectedSheetId, setSelectedSheetId] = useState<string | undefined>(
+    value.sheetId && value.sheetName ? `${value.sheetId}|${value.sheetName}` : undefined
+  );
 
   // Initialize state from props if editing existing selection
   useEffect(() => {
@@ -53,8 +56,9 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
         }] : []
       });
     }
-    if (value.sheetId) {
-      setSelectedSheetId(value.sheetId);
+    if (value.sheetId && value.sheetName) {
+      // Store in the full "id|name" format
+      setSelectedSheetId(`${value.sheetId}|${value.sheetName}`);
     }
   }, [value.spreadsheetId, value.spreadsheetName, value.sheetId, value.sheetName]);
 
@@ -100,7 +104,7 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
 
     const sheetIdStr = sheetIdAndName.substring(0, pipeIndex);
     const sheetName = sheetIdAndName.substring(pipeIndex + 1);
-    setSelectedSheetId(sheetIdStr);
+    setSelectedSheetId(sheetIdAndName); // Store the full "id|name" value
 
     onChange({
       spreadsheetId: validatedSpreadsheet.spreadsheetId,
