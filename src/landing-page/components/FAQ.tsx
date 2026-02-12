@@ -178,7 +178,7 @@ export default function FAQ({ faqs }: { faqs: FAQ[] }) {
             Still have questions?
           </p>
           <a
-            href="mailto:support@basesync.example.com"
+            href="mailto:support@basesync.app"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-cyan-500/30 bg-cyan-500/5 backdrop-blur-sm text-cyan-400 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-300 hover:scale-105 font-semibold"
           >
             <svg
