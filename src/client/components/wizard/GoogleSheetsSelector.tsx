@@ -45,7 +45,9 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
 
   // Initialize state from props if editing existing selection
   useEffect(() => {
-    if (value.spreadsheetId && value.spreadsheetName) {
+    // Only reconstruct validated state if we don't already have it loaded
+    // This prevents overwriting freshly validated spreadsheet data
+    if (!validatedSpreadsheet && value.spreadsheetId && value.spreadsheetName) {
       // If we have existing spreadsheet data, reconstruct the validated state
       setValidatedSpreadsheet({
         spreadsheetId: value.spreadsheetId,
@@ -60,7 +62,7 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
       // Store in the full "id|name" format
       setSelectedSheetId(`${value.sheetId}|${value.sheetName}`);
     }
-  }, [value.spreadsheetId, value.spreadsheetName, value.sheetId, value.sheetName]);
+  }, [value.spreadsheetId, value.spreadsheetName, value.sheetId, value.sheetName, validatedSpreadsheet]);
 
   const handleValidateUrl = async () => {
     if (!spreadsheetUrl.trim()) {
