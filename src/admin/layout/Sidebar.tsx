@@ -2,6 +2,7 @@ import {
   Activity,
   Database,
   LayoutDashboard,
+  MessageSquare,
   Settings,
   Users,
   X,
@@ -179,6 +180,33 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </NavLink>
               </li>
               {/* <!-- Menu Item Settings --> */}
+
+              {/* <!-- Menu Item Support Chat --> */}
+              <li>
+                <a
+                  href="https://dashboard.tawk.to/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:bg-accent hover:text-accent-foreground group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium duration-300 ease-in-out"
+                >
+                  <MessageSquare />
+                  <span className="flex-1">Support Chat</span>
+                  <svg
+                    className="w-3 h-3 opacity-50"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
+              </li>
+              {/* <!-- Menu Item Support Chat --> */}
             </ul>
           </div>
         </nav>

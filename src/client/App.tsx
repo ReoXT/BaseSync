@@ -7,6 +7,7 @@ import "./Main.css";
 import NavBar from "./components/NavBar/NavBar";
 import { buildNavigationItems } from "./components/NavBar/constants";
 import CookieConsentBanner from "./components/cookie-consent/Banner";
+import { TawkToChat } from "./components/TawkToChat";
 
 /**
  * use this component to wrap all child components
@@ -63,6 +64,11 @@ export default function App() {
       </div>
       <Toaster position="bottom-right" />
       <CookieConsentBanner />
+      <TawkToChat
+        propertyId="698fbfd9f6e6d41c36a26a6e"
+        widgetId="1jhcoar52"
+        user={user}
+      />
     </>
   );
 }
