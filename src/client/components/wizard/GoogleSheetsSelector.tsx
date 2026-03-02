@@ -111,7 +111,7 @@ export function GoogleSheetsSelector({ value, onChange }: GoogleSheetsSelectorPr
     onChange({
       spreadsheetId: validatedSpreadsheet.spreadsheetId,
       spreadsheetName: validatedSpreadsheet.spreadsheetTitle,
-      sheetId: sheetName,
+      sheetId: sheetIdStr,
       sheetName,
     });
   };

@@ -271,7 +271,14 @@ export async function getGoogleSheetsAccessToken(
   }
 
   // Token is still valid, decrypt and return
-  return decrypt(connection.accessToken);
+  try {
+    return decrypt(connection.accessToken);
+  } catch (error) {
+    throw new Error(
+      'Failed to decrypt Google Sheets access token. Your connection may be corrupted — ' +
+      'please reconnect your Google account.'
+    );
+  }
 }
 
 /**

@@ -291,7 +291,14 @@ export async function getAirtableAccessToken(
   }
 
   // Token is still valid, decrypt and return
-  return decrypt(connection.accessToken);
+  try {
+    return decrypt(connection.accessToken);
+  } catch (error) {
+    throw new Error(
+      'Failed to decrypt Airtable access token. Your connection may be corrupted — ' +
+      'please reconnect your Airtable account.'
+    );
+  }
 }
 
 /**

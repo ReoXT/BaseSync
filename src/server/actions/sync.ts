@@ -13,6 +13,16 @@ import { checkRecordLimit, isApproachingRecordLimit, shouldPauseSyncs, getSyncPa
 import { trackRecordsSynced } from '../utils/usageTracker';
 import type { User } from 'wasp/entities';
 
+/**
+ * Converts a googleSheetId string to its correct type for Google Sheets API calls.
+ * The DB stores the sheet GID as a string (e.g. "0" or "1234567").
+ * getSheetData() only resolves by numeric GID when the value is an actual number,
+ * so we must coerce numeric strings back to numbers here.
+ */
+function parseSheetId(sheetId: string): string | number {
+  return /^\d+$/.test(sheetId) ? parseInt(sheetId, 10) : sheetId;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -339,7 +349,7 @@ export const triggerManualSync = async (
           tableId: syncConfig.airtableTableId,
           viewId: syncConfig.airtableViewId, // Use view for exact order
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           fieldMappings,
           includeHeader: true,
           resolveLinkedRecords: true,
@@ -370,7 +380,7 @@ export const triggerManualSync = async (
           sheetsAccessToken,
           airtableAccessToken,
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
           fieldMappings,
@@ -410,7 +420,7 @@ export const triggerManualSync = async (
           tableId: syncConfig.airtableTableId,
           viewId: syncConfig.airtableViewId,
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           conflictResolution: syncConfig.conflictResolution as ConflictResolutionStrategy,
           fieldMappings,
           idColumnIndex: 0,
@@ -508,20 +518,20 @@ export const triggerManualSync = async (
         recordsSynced:
           syncConfig.syncDirection === 'BIDIRECTIONAL'
             ? (syncResult?.summary?.airtableToSheets?.added || 0) +
-              (syncResult?.summary?.airtableToSheets?.updated || 0) +
-              (syncResult?.summary?.sheetsToAirtable?.added || 0) +
-              (syncResult?.summary?.sheetsToAirtable?.updated || 0)
+            (syncResult?.summary?.airtableToSheets?.updated || 0) +
+            (syncResult?.summary?.sheetsToAirtable?.added || 0) +
+            (syncResult?.summary?.sheetsToAirtable?.updated || 0)
             : (syncResult?.added || 0) + (syncResult?.updated || 0),
         recordsFailed: errors.length,
         errors:
           errors.length > 0
             ? JSON.stringify(
-                errors.slice(0, 10).map((e) => ({
-                  message: e.message,
-                  recordId: e.recordId,
-                  type: e.type,
-                }))
-              )
+              errors.slice(0, 10).map((e) => ({
+                message: e.message,
+                recordId: e.recordId,
+                type: e.type,
+              }))
+            )
             : null,
         startedAt,
         completedAt,
@@ -536,9 +546,9 @@ export const triggerManualSync = async (
     if (syncStatus === 'SUCCESS' || syncStatus === 'PARTIAL') {
       const recordsCount = syncConfig.syncDirection === 'BIDIRECTIONAL'
         ? (syncResult?.summary?.airtableToSheets?.added || 0) +
-          (syncResult?.summary?.airtableToSheets?.updated || 0) +
-          (syncResult?.summary?.sheetsToAirtable?.added || 0) +
-          (syncResult?.summary?.sheetsToAirtable?.updated || 0)
+        (syncResult?.summary?.airtableToSheets?.updated || 0) +
+        (syncResult?.summary?.sheetsToAirtable?.added || 0) +
+        (syncResult?.summary?.sheetsToAirtable?.updated || 0)
         : (syncResult?.added || 0) + (syncResult?.updated || 0);
 
       await trackRecordsSynced(context.user!.id, recordsCount);
@@ -575,17 +585,17 @@ export const triggerManualSync = async (
       added:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.added || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.added || 0)
+          (syncResult?.summary?.sheetsToAirtable?.added || 0)
           : syncResult?.added || 0,
       updated:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.updated || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.updated || 0)
+          (syncResult?.summary?.sheetsToAirtable?.updated || 0)
           : syncResult?.updated || 0,
       deleted:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.deleted || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.deleted || 0)
+          (syncResult?.summary?.sheetsToAirtable?.deleted || 0)
           : syncResult?.deleted || 0,
       total: syncResult?.total || 0,
       errorCount: errors.length,
@@ -597,10 +607,10 @@ export const triggerManualSync = async (
     errors:
       errors.length > 0
         ? errors.slice(0, 20).map((e) => ({
-            message: e.message,
-            type: e.type,
-            recordId: e.recordId,
-          }))
+          message: e.message,
+          type: e.type,
+          recordId: e.recordId,
+        }))
         : undefined,
     warnings: warnings.length > 0 ? warnings : undefined,
     conflicts:
@@ -872,7 +882,7 @@ export const runInitialSync = async (
           tableId: syncConfig.airtableTableId,
           viewId: syncConfig.airtableViewId, // Use view for exact order
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           fieldMappings,
           includeHeader: true,
           resolveLinkedRecords: true,
@@ -903,7 +913,7 @@ export const runInitialSync = async (
           sheetsAccessToken,
           airtableAccessToken,
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           baseId: syncConfig.airtableBaseId,
           tableId: syncConfig.airtableTableId,
           fieldMappings,
@@ -943,7 +953,7 @@ export const runInitialSync = async (
           tableId: syncConfig.airtableTableId,
           viewId: syncConfig.airtableViewId,
           spreadsheetId: syncConfig.googleSpreadsheetId,
-          sheetId: syncConfig.googleSheetId,
+          sheetId: parseSheetId(syncConfig.googleSheetId),
           conflictResolution: syncConfig.conflictResolution as ConflictResolutionStrategy,
           fieldMappings,
           idColumnIndex: 0,
@@ -1047,20 +1057,20 @@ export const runInitialSync = async (
           recordsSynced:
             syncConfig.syncDirection === 'BIDIRECTIONAL'
               ? (syncResult?.summary?.airtableToSheets?.added || 0) +
-                (syncResult?.summary?.airtableToSheets?.updated || 0) +
-                (syncResult?.summary?.sheetsToAirtable?.added || 0) +
-                (syncResult?.summary?.sheetsToAirtable?.updated || 0)
+              (syncResult?.summary?.airtableToSheets?.updated || 0) +
+              (syncResult?.summary?.sheetsToAirtable?.added || 0) +
+              (syncResult?.summary?.sheetsToAirtable?.updated || 0)
               : (syncResult?.added || 0) + (syncResult?.updated || 0),
           recordsFailed: errors.length,
           errors:
             errors.length > 0
               ? JSON.stringify(
-                  errors.slice(0, 10).map((e) => ({
-                    message: e.message,
-                    recordId: e.recordId,
-                    type: e.type,
-                  }))
-                )
+                errors.slice(0, 10).map((e) => ({
+                  message: e.message,
+                  recordId: e.recordId,
+                  type: e.type,
+                }))
+              )
               : null,
           startedAt,
           completedAt,
@@ -1106,17 +1116,17 @@ export const runInitialSync = async (
       added:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.added || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.added || 0)
+          (syncResult?.summary?.sheetsToAirtable?.added || 0)
           : syncResult?.added || 0,
       updated:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.updated || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.updated || 0)
+          (syncResult?.summary?.sheetsToAirtable?.updated || 0)
           : syncResult?.updated || 0,
       deleted:
         syncConfig.syncDirection === 'BIDIRECTIONAL'
           ? (syncResult?.summary?.airtableToSheets?.deleted || 0) +
-            (syncResult?.summary?.sheetsToAirtable?.deleted || 0)
+          (syncResult?.summary?.sheetsToAirtable?.deleted || 0)
           : syncResult?.deleted || 0,
       total: syncResult?.total || 0,
       errorCount: errors.length,
@@ -1128,10 +1138,10 @@ export const runInitialSync = async (
     errors:
       errors.length > 0
         ? errors.slice(0, 20).map((e) => ({
-            message: e.message,
-            type: e.type,
-            recordId: e.recordId,
-          }))
+          message: e.message,
+          type: e.type,
+          recordId: e.recordId,
+        }))
         : undefined,
     warnings: warnings.length > 0 ? warnings : undefined,
     conflicts:

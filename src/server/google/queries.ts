@@ -258,7 +258,14 @@ export const getSheetColumnHeaders: GetSheetColumnHeaders<
     throw new Error('User must be authenticated');
   }
 
-  const { spreadsheetId, sheetId } = args;
+  const { spreadsheetId, sheetId: rawSheetId } = args;
+
+  // If sheetId was sent as a numeric string (e.g. "0", "1234567"), coerce to a number
+  // so getSheetData resolves it by GID (numeric) rather than treating it as a sheet title
+  const sheetId: string | number =
+    typeof rawSheetId === 'string' && /^\d+$/.test(rawSheetId)
+      ? parseInt(rawSheetId, 10)
+      : rawSheetId;
 
   if (!spreadsheetId || sheetId === undefined) {
     throw new Error('Spreadsheet ID and Sheet ID are required');
